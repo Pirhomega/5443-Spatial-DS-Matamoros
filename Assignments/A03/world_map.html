@@ -35,68 +35,34 @@
             zoom: 3
         });
 
-        map.on('load', function () {
-            $.getJSON("http://localhost:8888/country/Egypt?key=value{}")
+        // The `click` event is an example of a `MapMouseEvent`.
+        // Set up an event listener on the map.
+        map.on('click', function (e) {
+            // The event object (e) contains information like the
+            // coordinates of the point on the map that was clicked.
+            console.log('A click event has occurred at ' + e.lngLat);
+            console.log('A click event has occurred at ' + e.lngLat.toArray());
+            $.getJSON("http://localhost:8888/click/?lngLat=" + e.lngLat.toArray())
+            // `json` is a list of a source id and the FeatureCollection, e.g. [id, FeatureCollection]
                 .done(function (json) {
                     console.log(json);
-                    map.addSource('country', {
+                    // adds a data source to the map that `addLayer` will format before displaying
+                    map.addSource(json[0], {
                         'type': 'geojson',
-                        'data': json
+                        'data': json[1]
                     });
+                    // display all Features in the FeatureCollection as black circles
                     map.addLayer({
-                        'id': 'country',
-                        'type': 'line',
-                        'source': 'country',
-                        'layout': {
-                            'line-join': 'round',
-                            'line-cap': 'round'
-                        },
-                        'paint': {
-                            'line-color': '#FF0000',
-                            'line-width': 4
-                        }
+                        'id': json[0],
+                        'type': 'circle',
+                        'source': json[0]
                     });
                 })
                 .fail(function (jqxhr, textStatus, error) {
                     var err = textStatus + ", " + error;
                     console.log("Request Failed: " + err);
                 });
-            // The `click` event is an example of a `MapMouseEvent`.
-            // Set up an event listener on the map.
-            map.on('click', function (e) {
-                // The event object (e) contains information like the
-                // coordinates of the point on the map that was clicked.
-                console.log('A click event has occurred at ' + e.lngLat);
-                console.log('A click event has occurred at ' + e.lngLat.toArray());
-                $.getJSON("http://localhost:8888/click/?lngLat=" + e.lngLat.toArray())
-                    .done(function (json) {
-                        console.log(json['country']);
-                        // json['country']['id']
-                        map.addSource(json['country']['id'], {
-                            'type': 'geojson',
-                            'data': json['country']
-                        });
-                        map.addLayer({
-                            'id': json['country']['id'],
-                            'type': 'line',
-                            'source': json['country']['id'],
-                            'layout': {
-                                'line-join': 'round',
-                                'line-cap': 'round'
-                            },
-                            'paint': {
-                                'line-color': '#AA6745',
-                                'line-width': 4
-                            }
-                        });
-                    })
-                    .fail(function (jqxhr, textStatus, error) {
-                        var err = textStatus + ", " + error;
-                        console.log("Request Failed: " + err);
-                    });
             });
-
-        });
     </script>
 
 </body>
