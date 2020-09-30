@@ -8,3 +8,13 @@ Repo for the Fall 2020 class at Midwestern State University with Professor Terry
 ![avatar of corbin](https://i.imgur.com/H5bLYIO.png)
 
 ## Contact: corbinmatamoros@yahoo.com
+
+## Directory tree
+
+```txt
+/5443-Spatial-Data-Structures
+├── README.md
+├── .gitignore
+├── Assignments
+├────── A03
+```
