@@ -111,7 +111,10 @@ map.on('load', function () {
 map.on('load', function () {
 
     $(document).ready(function () {
-
+        
+        // Purpose:     Adds a source and a layer to the map
+        // Input:       a source ID and a geojson feature object
+        // Output:      None
         function loadSourceLayer(coordID, coordData) {
             map.addSource(coordID, {
                 type: 'geojson',
@@ -129,8 +132,16 @@ map.on('load', function () {
                 },
             });
         };
-
+        
+        // Purpose:     Removes a source ID and its associated layer from the map
+        // Input:       None
+        // Output:      None
         function clearSourceLayer() {
+            // this is a call to the backend. It will feed the frontend
+            //      a key-value pair where the key is an integer equal to
+            //      to the number of feature objects to erase from the map,
+            //      and the value is an array of all the feature objects to
+            //      be removed.
             $.getJSON("http://localhost:8888/deleteCoord/")
                 .done(function (coordsJSON) {
                     for (var i = 0; i < coordsJSON['0']; ++i) {
@@ -148,6 +159,7 @@ map.on('load', function () {
         //clear
         $('#findLLButtonClear').click(function () {
             clearSourceLayer()
+            // adjusts the map view to be centered on lng=0,lat=0
             map.flyTo({
                 center: [0, 0]
             });
@@ -155,19 +167,21 @@ map.on('load', function () {
 
         //find
         $('#findLLButton').click(function () {
-
+            // grabs the number input from the lngInput-latInput fields
             var enterLng = +document.getElementById('lngInput').value
             var enterLat = +document.getElementById('latInput').value
 
+            // creates a geojson feature object with the lng and lat values
             var enterLL = turf.point([enterLng, enterLat]);
+            // makes a call to the backend to save the feature object in a
+            //      feature collection
             $.getJSON("http://localhost:8888/saveCoord/?lngLat=" + [enterLng, enterLat])
                 .done(function (coord) {
-
-                    console.log("This is the sourceID: " + coord)
-
+                    // display the coordinate on the map
                     var coordID = coord.toString()
                     loadSourceLayer(coordID, enterLL)
-
+                    
+                    // center the view on the newly-added coordinate
                     map.flyTo({
                         center: [enterLng, enterLat]
                     });
@@ -186,7 +200,7 @@ map.on('load', function () {
                 })
         })
 
-        //save to JSON
+        //load from JSON
         $('#loadJSONButton').click(function () {
             clearSourceLayer()
             $.getJSON("http://localhost:8888/loadJSON/")
@@ -199,8 +213,9 @@ map.on('load', function () {
                         centerLat += json['1'][i].geometry.coordinates[1]
                     }
 
+                    // center the view on the centerpoint of all newly added coords
                     map.flyTo({
-                        center: [centerLng/json['0'], centerLat/json['0']]
+                        center: [centerLng / json['0'], centerLat / json['0']]
                     });
 
                 })

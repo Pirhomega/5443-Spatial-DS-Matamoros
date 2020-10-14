@@ -75,11 +75,24 @@ source = -1
 def index():
     return 'This is the base route'
 
+
 @app.route('/saveCoord/')
 def saveCoord():
-    global source
+    """
+    Purpose:    Receives a latitude and longtitude value from the frontend
+                    and uses it to append a properly-formatted geojson feature
+                    to the feature collection `results_featurecollection`.
+    Input:      Two strings equivalent to a longitude and latitude value
+    Output:     A source ID integer that the frontend will use to name the spot
+                    on the map represented by the longitude and latitude inputted.
+    """
+    global source, results_featurecollection
+    # the source integer the frontend will use to identify the spot with `lat, lon`
     source += 1
-    lat, lon = request.args.get("lngLat",None).split(',')
+    # the longitude and latitude values from the frontend
+    lon, lat = request.args.get("lngLat",None).split(',')
+    # append the properly formatted geojson object with the above coords
+    #    to the feature collection
     results_featurecollection['features'].append({
         'type': 'Feature',
         'geometry': {
@@ -90,28 +103,68 @@ def saveCoord():
             'source': str(source)
         }
     })
+    # send the source ID to the frontend for when it creates a layer to
+    #   show the coord on the map
     return (str(source))
 
 @app.route('/deleteCoord/')
 def deleteCoord():
-    global source
+    """
+    Purpose:    Remove all features from the `results_featurecollection` geojson object
+                    This is called whenever the frontend erases all spots/layers from
+                    map.
+    Input:      None
+    Output:     A dictionary with a key equal to the number of coords the frontend
+                    will delete from the map and a value equal to a list of the
+                    feature objects the frontend will delete (these feature objects 
+                    are properly formatted geojson features)
+    """
+    global source, results_featurecollection
+    # reset source's value so the next coord to be added to the map will have a source
+    #   value of zero
     source = -1
+    # the number of coords to erase from the map and results_featurecollection
     coordCount = len(results_featurecollection['features'])
+    # save the list of features to be erased to a temp variable.
+    #   Then set the 'features' list to be empty
     json_coords_to_be_deleted = results_featurecollection['features']
     results_featurecollection['features'] = []
+
     return jsonify(coordCount,json_coords_to_be_deleted)
 
 @app.route('/saveJSON/')
 def saveJSON():
+    """
+    Purpose:    Saves feature collection saved in `results_featurecollection`
+                    to a .geojson file
+    Input:      None
+    Output:     A trivial integer that the frontend needs so the backend doesn't crash.
+                (The backend needs to return something, apparently)
+    """
     with open('./Assignments/A04/assets/api/data/mapCoords.geojson', 'w') as out:
         json.dump(results_featurecollection, out, indent="    ")
     return "1"
 
 @app.route('/loadJSON/')
 def loadJSON():
+    """
+    Purpose:    Loads a properly formatted geojson file into `results_featurecollection`
+                    passing the number of feature objects in it and the list of feature
+                    objects to the frontend for loading onto a map
+    Input:      None
+    Output:     A python dictionary with the key equal to the number of feature objects,
+                    and a value of a list of feature objects
+    """
     with open('./Assignments/A04/assets/api/data/mapCoords.geojson', 'r') as infile:
+        global source, results_featurecollection
+        # store the .geojson contents into `results_featurecollection`
         results_featurecollection = json.load(infile)
         coordCount = len(results_featurecollection['features'])
+        # update source to be equal to the number of feature objects loaded
+        #   into the feature collection. That way, the user can add more coords
+        #   to the map and the source values resume from the last feature object
+        #   loaded here
+        source = coordCount
         return jsonify(coordCount,results_featurecollection['features'])
 
 
