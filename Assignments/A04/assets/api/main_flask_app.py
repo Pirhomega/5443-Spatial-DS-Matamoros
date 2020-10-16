@@ -13,16 +13,16 @@ CORS(app)
 
 ##############################################################################
 
-# loads a GeoJSON file into memory and stores it as a dictionary
-# Here, we load a file of countries
-def get_countries():
-    data_file = 'data/countries.geo.json'
-    if path.isfile(data_file):
-        with open(data_file, 'r') as f:
-            data = f.read()
-    else:
-        return jsonify({"Error":"countries.geo.json not there!!"})
-    return loads(data)
+# # loads a GeoJSON file into memory and stores it as a dictionary
+# # Here, we load a file of countries
+# def get_countries():
+#     data_file = 'data/countries.geo.json'
+#     if path.isfile(data_file):
+#         with open(data_file, 'r') as f:
+#             data = f.read()
+#     else:
+#         return jsonify({"Error":"countries.geo.json not there!!"})
+#     return loads(data)
 
 # loads a JSON file into memory and stores it as a dictionary
 # Here, we load a file of earthquakes
@@ -167,36 +167,141 @@ def loadJSON():
         source = coordCount
         return jsonify(coordCount,results_featurecollection['features'])
 
+###############################################################################################
 
-# when the user clicks the mouse inside the map, grab the N nearest neighbors
-#       to the location of the click (location is in world coordinates: lat/lon)
-# @app.route('/click/')
-# def click():
-#     # we use `query_num` to create a unique source for any set of five nearest points
-#     global query_num
-#     # ask for the location of the mouse in world coordinates (lon, lat) from the frontend
-#     lon, lat = request.args.get("lngLat",None).split(",")
-#     # what we will be passing to the frontend for visualization of the earthquakes
-#     results_featurecollection = {
-#                 'type': 'FeatureCollection',
-#                 'features': []
-#                 }
-#     # grabs the five nearest nodes to the click location and returns a list of the R-tree id's
-#     nearest = list(earthquake_rtree.nearest((float(lon),float(lat),float(lon),float(lat)),5))
-#     nearest_full = []
-#     # loop through all five nearest points and append them to `nearest_full`
-#     for item in nearest:
-#         # since the format of the json data is not GeoJSON (it has an 'id' field), 
-#         #       we create a GeoJSON-friendly dict and append it to `nearest_full`
-#         nearest_full.append({
-#                 'type': 'Feature',
-#                 'geometry': rtreeID_to_id[item]['geometry'],
-#                 'properties': rtreeID_to_id[item]['properties']
-#             })
-#     # the FeatureCollection is complete and can be passed to the frontend for visualization
-#     results_featurecollection['features'] = nearest_full
-#     query_num += 1
-#     return jsonify([str(query_num), results_featurecollection])
+dataset_map = {
+    "earthquakes": {
+        "path": "./Assignments/A04/assets/api/data/earthquakes.geojson",
+        "loaded": False,
+        "rtree": rtree.index.Index(),
+        "idmap": {}
+        },
+    "volcanos": {
+        "path": "./Assignments/A04/assets/api/data/volcanos.geojson",
+        "loaded": False,
+        "rtree": rtree.index.Index(),
+        "idmap": {}
+        },
+    "ufos": {
+        "path": "./Assignments/A04/assets/api/data/ufos.geojson",
+        "loaded": False,
+        "rtree": rtree.index.Index(),
+        "idmap": {}
+        }
+}
+
+# datasets is dictionary of the selected datasets from the frontend: {"earthquakes": 1, "volcanos": 0, "ufos": 0}
+def process_datasets(datasets):
+    global dataset_map
+    searchable_datasets = []
+    for dataset in datasets:
+        if datasets[dataset]:
+            if not dataset_map[dataset]["loaded"]:
+                # CAUSES ERROR BECAUSE IF THIS IF STATEMENT DOESN'T RUN, WE GET A "VARIABLE REFERENCED BEFORE ASSIGNMENT" ERROR DOWN THERE
+                loaded_dataset_with_properties = load_data_into_Rtree(dataset_map[dataset]["path"])
+                dataset_map[dataset]["loaded"] = True
+                dataset_map[dataset]["rtree"] = loaded_dataset_with_properties[0]
+                dataset_map[dataset]["idmap"] = loaded_dataset_with_properties[1]
+            else:
+                loaded_dataset_with_properties = (dataset_map[dataset]["rtree"], dataset_map[dataset]["idmap"])
+            # HERE IS WHERE THE ERROR GETS CAUGHT
+            searchable_datasets.append(loaded_dataset_with_properties)
+    return searchable_datasets
+    
+def load_data_into_Rtree(path_to_dataset):
+    if path.isfile(path_to_dataset):
+        with open(path_to_dataset, 'r') as f:
+            data = f.read()
+    else:
+        print("Incorrect path to dataset. Check DATASET_MAP.")
+    dataset = loads(data)
+
+    # an rtree that can hold a geometric data structure, like a rectangle or a point,
+    #       and an id (which does not have to be unique, but we will make it so). 
+    dataset_rtree = rtree.index.Index()
+    # since we can't store any more data in the rtree's nodes, we will keep a dictionary
+    #       to map the rtree node id's and the id's of the earthquake (in the .json file
+    #       we loaded back in `get_earthquakes`)
+    rtreeID_to_id = {}
+    # the unique id for each node in the R-tree
+    id = 0
+    for document in dataset["features"]:
+        # for every document in the dataset's dictionary, if the coord is
+        #       a point, load it into the rtree
+        if document["type"] == "Feature" and document["geometry"]["type"] == "Point":
+            # 2D coordinates must be loaded into the R-tree as `(topleft_x, topleft_y, bottomright_x, bottomright_y)`
+            #       For a point, that's just (x, y, x, y)
+            dataset_coord = (document["geometry"]["coordinates"][0], document["geometry"]["coordinates"][1], \
+                                document["geometry"]["coordinates"][0], document["geometry"]["coordinates"][1])
+            dataset_rtree.insert(id, dataset_coord)
+            # map the R-tree id with the actual json data file document
+            rtreeID_to_id[id] = document
+            id += 1
+    return (dataset_rtree, rtreeID_to_id)
+
+# call process_datasets --> [(datasetRtree1, Rtree2DatasetMap1),(datasetRtree2, Rtree2DatasetMap2),(datasetRtree3, Rtree2DatasetMap3)]
+# query rtree --> [id1, id2, id3]
+# map all id's to id's in Rtree2DatasetMap -> [geojsondocument1, geojsondocument2, geojsondocument3]
+# append all results to feature collection -> {geojson feature collection}
+# send to frontend -> {query number, feature collection}
+
+queryNum = -1
+
+NN_featurecollection = {
+        'type': 'FeatureCollection',
+        'features': []
+        }
+
+@app.route('/nnQuery/')
+def nnQuery():
+    global queryNum, NN_featurecollection
+    queryNum += 1
+    # queryDict = {"datasets":{}, "geojson":{}, "queryType":{}}
+    queryDict = json.loads(request.args.get("NNparams"))
+    # searchable_datasets = [(datasetRtree1, Rtree2DatasetMap1),(datasetRtree2, Rtree2DatasetMap2),(datasetRtree3, Rtree2DatasetMap3)]
+    searchable_datasets = process_datasets(queryDict["datasets"])
+    lng = queryDict["geojson"]["geometry"]["coordinates"][0]
+    lat = queryDict["geojson"]["geometry"]["coordinates"][1]
+    if queryDict["queryType"]["name"] == "nearestN":
+        # iterating through a list of tuples
+        for dataset in searchable_datasets:
+            nearest = list(dataset[0].nearest((float(lng),float(lat),float(lng),float(lat)),int(queryDict["queryType"]["value"])))
+            # loop through all five nearest points and append them to `all_nearest_neighbors`
+            for coordID in nearest:
+                # since the format of the json data is not GeoJSON (it has an 'id' field), 
+                #       we create a GeoJSON-friendly dict and append it to `all_nearest_neighbors`
+                #       Remember, `dataset[1]` is `rtreeID_to_id` which maps the rtree id to the geojson document
+                #       from the original .geojson file
+                NN_featurecollection['features'].append({
+                        'type': 'Feature',
+                        'geometry': dataset[1][coordID]['geometry'],
+                        'properties': dataset[1][coordID]['properties']
+                    })
+    return jsonify(str(queryNum), NN_featurecollection)
+
+@app.route('/deleteNNCoord/')
+def deleteNNCoord():
+    """
+    Purpose:    Remove all features from the `results_featurecollection` geojson object
+                    This is called whenever the frontend erases all spots/layers from
+                    map.
+    Input:      None
+    Output:     A dictionary with a key equal to the number of coords the frontend
+                    will delete from the map and a value equal to a list of the
+                    feature objects the frontend will delete (these feature objects 
+                    are properly formatted geojson features)
+    """
+    global queryNum, NN_featurecollection
+    # reset source's value so the next coord to be added to the map will have a source
+    #   value of zero
+    number_of_queries_to_delete = queryNum + 1
+    queryNum = -1
+    # save the list of features to be erased to a temp variable.
+    #   Then set the 'features' list to be empty
+    json_coords_to_be_deleted = NN_featurecollection['features']
+    NN_featurecollection['features'] = []
+
+    return str(number_of_queries_to_delete)
 
 ######################################################################################
 
@@ -215,4 +320,4 @@ if __name__ == '__main__':
     # otherwise, run the app. Open the `world_map.html` in your favorite browser to
     #       begin visualization and interation with the app
     else:
-        app.run(host='0.0.0.0', port=8888)
+        app.run(host='0.0.0.0', port=8888, debug=True)

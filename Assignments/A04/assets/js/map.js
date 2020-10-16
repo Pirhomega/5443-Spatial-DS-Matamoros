@@ -111,7 +111,7 @@ map.on('load', function () {
 map.on('load', function () {
 
     $(document).ready(function () {
-        
+
         // Purpose:     Adds a source and a layer to the map
         // Input:       a source ID and a geojson feature object
         // Output:      None
@@ -132,7 +132,7 @@ map.on('load', function () {
                 },
             });
         };
-        
+
         // Purpose:     Removes a source ID and its associated layer from the map
         // Input:       None
         // Output:      None
@@ -167,6 +167,7 @@ map.on('load', function () {
 
         //find
         $('#findLLButton').click(function () {
+            console.log("#findLLButton was pressed!")
             // grabs the number input from the lngInput-latInput fields
             var enterLng = +document.getElementById('lngInput').value
             var enterLat = +document.getElementById('latInput').value
@@ -180,7 +181,7 @@ map.on('load', function () {
                     // display the coordinate on the map
                     var coordID = coord.toString()
                     loadSourceLayer(coordID, enterLL)
-                    
+
                     // center the view on the newly-added coordinate
                     map.flyTo({
                         center: [enterLng, enterLat]
@@ -222,6 +223,127 @@ map.on('load', function () {
         })
     });
 });
+
+//Nearest Neighbor Query
+//Nearest Neighbor Query
+//Nearest Neighbor Query
+
+map.on('load', function () {
+
+    $(document).ready(function () {
+
+        // Purpose:     Adds a source and a layer to the map
+        // Input:       a source ID and a geojson feature object
+        // Output:      None
+        function loadSourceLayer(coordID, coordData) {
+            map.addSource("NN"+coordID, {
+                type: 'geojson',
+                data: coordData
+            });
+
+            map.addLayer({
+                id: "NN"+coordID,
+                type: 'circle',
+                source: "NN"+coordID,
+                layout: {},
+                paint: {
+                    "circle-color": 'red',
+                    "circle-radius": 8,
+                },
+            });
+        };
+
+        // Purpose:     Removes a source ID and its associated layer from the map
+        // Input:       None
+        // Output:      None
+        function clearSourceLayer() {
+            // this is a call to the backend. It will feed the frontend
+            //      a key-value pair where the key is an integer equal to
+            //      to the number of feature objects to erase from the map,
+            //      and the value is an array of all the feature objects to
+            //      be removed.
+            $.getJSON("http://localhost:8888/deleteNNCoord/")
+                .done(function (num_queries_to_delete) {
+                    var numQueriesInt = parseInt(num_queries_to_delete)
+                    for (var i = 0; i < numQueriesInt; ++i) {
+                        var queryNum = i.toString()
+                        console.log("Deleting ", queryNum)
+                        map.removeLayer("NN"+queryNum);
+                        map.removeSource("NN"+queryNum);
+
+                        if (map.getLayer("NN"+queryNum)) {
+                            map.removeLayer("NN"+queryNum);
+                            map.removeSource("NN"+queryNum);
+                        }
+                    }
+                })
+        };
+
+        function chooseDataset() {
+            return {
+                "datasets": {
+                    "earthquakes": document.getElementById("earthquakes").checked
+                    // "volcanos": document.getElementById("volcanos").checked,
+                    // "planes": document.getElementById("planes").checked,
+                    // "ufos": document.getElementById("ufos").checked
+                }
+            }
+        };
+
+        function chooseQueryType() {
+            if (document.getElementById("nearestN").checked)
+                return {
+                    "queryType": {
+                        "name": "nearestN",
+                        "value": document.getElementById('nearestNValue').value
+                    }
+                }
+            else
+                return {
+                    "queryType": {
+                        "name": "radiusKm",
+                        "value": document.getElementById('radiusKm').value
+                    }
+                }
+        };
+
+        //find
+        $('#queryNN').click(function () {
+            var selectedDatasets = chooseDataset()
+            var selectQueryType = chooseQueryType()
+
+            // grabs the number input from the lngInput-latInput fields
+            var enterLng = +document.getElementById('lngInputQ').value
+            var enterLat = +document.getElementById('latInputQ').value
+
+            // creates a geojson feature object with the lng and lat values
+            var enterLL = { "geojson": turf.point([enterLng, enterLat]) }
+            var NNparams = $.extend({}, selectedDatasets, selectQueryType, enterLL)
+            console.log(NNparams)
+
+            // makes a call to the backend to save the feature object in a
+            //      feature collection
+            $.getJSON("http://localhost:8888/nnQuery/?NNparams=" + JSON.stringify(NNparams))
+                .done(function (json) {
+                    console.log(json);
+                    loadSourceLayer(json[0], json[1])
+                    map.flyTo({
+                        center: [enterLng, enterLat]
+                    });
+                });
+        });
+
+        //clear
+        $('#queryNNClear').click(function () {
+            clearSourceLayer()
+            // adjusts the map view to be centered on lng=0,lat=0
+            map.flyTo({
+                center: [0, 0]
+            });
+        });
+    });
+});
+
 
 // Coordinates Tool
 // Coordinates Tool

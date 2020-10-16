@@ -202,6 +202,11 @@
 
                     <li>
                         <!-- Search Button -->
+                        <a class="clickable" data-toggle="modal" data-target="#nearestNeighborModal" title="Nearest Neighbor Query"><i class="fas fa-user-friends"></i></a>
+                    </li>
+
+                    <li>
+                        <!-- Search Button -->
                         <a class="clickable" data-toggle="modal" data-target="#searchModal" title="Search Layer Attributes"><i class="fa fa-fw fa-search"></i></a>
                     </li>
 
@@ -430,6 +435,77 @@
                         <div style="padding-top:10px">
                             <input type="button" value="save" id="saveJSONButton" style="font-size: 10px;">
                             <input type="button" value="load" id="loadJSONButton" style="font-size: 10px;">
+                        </div>
+
+                        <br />
+                        <hr>
+                        <br />
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Nearest Neighbor Modal -->
+        <!-- Nearest Neighbor Modal -->
+        <!-- Nearest Neighbor Modal -->
+        <div class="modal left fade" id="nearestNeighborModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title" id="myModalLabel"><i class="fas fa-user-friends"></i>&nbsp;Nearest Neighbor Query</h4>
+                    </div>
+
+                    <div class="modal-body">
+
+                        <hr>
+                        <br />
+
+                        <!-- select data -->
+                        <div style="vertical-align:top;">
+                            <p style="font-size: 12px"><i class="fas fa-map-marked-alt"></i>  Select Dataset</p>
+                            <input type="checkbox" id='earthquakes' name='dataset' checked style="font-size: 10px; padding: 2px; margin:2px">
+                            <label for='earthquakes'>Earthquakes</label><br>
+                            <!-- <input type="checkbox" id='volcanos' name='dataset' checked style="font-size: 10px; padding: 2px; margin:2px">
+                            <label for='volcanos'>Volcanos</label><br>
+                            <input type="checkbox" id='ufos' name='ufos' checked style="font-size: 10px; padding: 2px; margin:2px">
+                            <label for='ufos'>UFO sightings</label><br> -->
+                        </div>
+
+                        <br />
+                        <hr>
+                        <br />
+
+                        <!-- select nearest neighbor query type -->
+                        <div style="vertical-align:top;">
+                            <p style="font-size: 12px"><i class="fas fa-map-marked-alt"></i>  Select query type</p>
+
+                            <input type="radio" id='nearestN' name='queryType' checked style="font-size: 11px; padding: 2px; margin:2px">
+                            <label for='nearestN'>Nearest neighbors </label><br>
+                            <input type="number" id='nearestNValue' min=1 style="font-size: 11px; padding: 2px; margin:2px" placeholder='N'><br>
+
+                            <!-- <input type="radio" id='radius' name='queryType' style="font-size: 11px; padding: 2px; margin:2px">
+                            <label for='radius'>Radius</label><br>
+                            <input type="number" id='radiusKm' min=1 style="font-size: 11px; padding: 2px; margin:2px" placeholder='Km'> -->
+
+                        </div>
+
+                        <br />
+                        <hr>
+                        <br />
+
+                        <!-- enter lng/lat -->
+                        <div style="vertical-align:top;">
+                            <p style="font-size: 12px"><i class="fas fa-map-marked-alt"></i>  Enter Coordinates</p>
+                            <input type="number" id='lngInputQ' style="font-size: 11px; padding: 2px; margin:2px" placeholder="longitude"><br>
+                            <input type="number" id='latInputQ' style="font-size: 11px; padding: 2px; margin:2px" placeholder="latitude"><br>
+
+                            <div style="padding-top:10px">
+                                <input type="button" value="query" id="queryNN" style="font-size: 10px;">
+                                <input type="button" value="clear" id="queryNNClear" style="font-size: 10px;">
+                            </div>
                         </div>
 
                         <br />
