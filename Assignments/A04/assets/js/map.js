@@ -236,15 +236,15 @@ map.on('load', function () {
         // Input:       a source ID and a geojson feature object
         // Output:      None
         function loadSourceLayer(coordID, coordData) {
-            map.addSource("NN"+coordID, {
+            map.addSource("NN" + coordID, {
                 type: 'geojson',
                 data: coordData
             });
 
             map.addLayer({
-                id: "NN"+coordID,
+                id: "NN" + coordID,
                 type: 'circle',
-                source: "NN"+coordID,
+                source: "NN" + coordID,
                 layout: {},
                 paint: {
                     "circle-color": 'red',
@@ -268,12 +268,12 @@ map.on('load', function () {
                     for (var i = 0; i < numQueriesInt; ++i) {
                         var queryNum = i.toString()
                         console.log("Deleting ", queryNum)
-                        map.removeLayer("NN"+queryNum);
-                        map.removeSource("NN"+queryNum);
+                        map.removeLayer("NN" + queryNum);
+                        map.removeSource("NN" + queryNum);
 
-                        if (map.getLayer("NN"+queryNum)) {
-                            map.removeLayer("NN"+queryNum);
-                            map.removeSource("NN"+queryNum);
+                        if (map.getLayer("NN" + queryNum)) {
+                            map.removeLayer("NN" + queryNum);
+                            map.removeSource("NN" + queryNum);
                         }
                     }
                 })
@@ -344,6 +344,75 @@ map.on('load', function () {
     });
 });
 
+
+//Upload GeoJSON
+//Upload GeoJSON
+//Upload GeoJSON
+
+map.on('load', function () {
+
+    $(document).ready(function () {
+
+        // Purpose:     Adds a source and a layer to the map
+        // Input:       a source ID and a geojson feature object
+        // Output:      None
+        function loadSourceLayer(coordID, coordData) {
+            map.addSource(coordID, {
+                type: 'geojson',
+                data: coordData
+            });
+
+            map.addLayer({
+                id: coordID,
+                type: 'circle',
+                source: coordID,
+                layout: {},
+                paint: {
+                    "circle-color": 'red',
+                    "circle-radius": 8,
+                },
+            });
+        };
+
+        // Purpose:     Removes a source ID and its associated layer from the map
+        // Input:       None
+        // Output:      None
+        function clearSourceLayer() {
+            // this is a call to the backend. It will feed the frontend
+            //      a key-value pair where the key is an integer equal to
+            //      to the number of feature objects to erase from the map,
+            //      and the value is an array of all the feature objects to
+            //      be removed.
+            if (map.getLayer("showGJ")) {
+                map.removeLayer("showGJ");
+                map.removeSource("showGJ");
+            }
+        };
+
+        //clear geojson
+        $('#clearGJ').click(function () {
+            console.log("clearGJ was pressed")
+            clearSourceLayer()
+            // adjusts the map view to be centered on lng=0,lat=0
+            map.flyTo({
+                center: [0, 0]
+            });
+        });
+
+        //display geojson
+        $('#submitGJ').click(function () {
+            console.log("submitGJ was pressed")
+            // grabs the number input from the lngInput-latInput fields
+            var submitted_geojson = JSON.parse(document.getElementById('geoJSONTextBox').value)
+            // console.log(submitted_geojson)
+            clearSourceLayer()
+            loadSourceLayer("showGJ", submitted_geojson)
+            map.flyTo({
+                center: [0, 0]
+            });
+        });
+    });
+});
 
 // Coordinates Tool
 // Coordinates Tool

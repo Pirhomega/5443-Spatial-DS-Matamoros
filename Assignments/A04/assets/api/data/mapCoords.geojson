@@ -1,4 +1,42 @@
 {
     "type": "FeatureCollection",
-    "features": []
+    "features": [{
+            "type": "Feature",
+            "properties": {
+                "mag": -0.05,
+                "place": "98km SE of King Salmon, Alaska",
+                "time": 1572479700990,
+                "updated": 1572481983240,
+                "tz": -540,
+                "url": "https://earthquake.usgs.gov/earthquakes/eventpage/av70855469",
+                "detail": "https://earthquake.usgs.gov/fdsnws/event/1/query?eventid=av70855469&format=geojson",
+                "felt": null,
+                "cdi": null,
+                "mmi": null,
+                "alert": null,
+                "status": "reviewed",
+                "tsunami": 0,
+                "sig": 0,
+                "net": "av",
+                "code": "70855469",
+                "ids": "av70855469",
+                "sources": ",av,",
+                "types": ",geoserve,origin,phase-data,",
+                "nst": 7,
+                "dmin": 0.03339,
+                "rms": 0.05,
+                "gap": 143,
+                "magType": "ml",
+                "type": "earthquake",
+                "title": "M -0.1 - 98km SE of King Salmon, Alaska"
+            },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    -155.2781667,
+                    58.1896667,
+                    2.53
+                ]
+            }
+        }]
 }

@@ -201,8 +201,13 @@
                     </li>
 
                     <li>
-                        <!-- Search Button -->
+                        <!-- Nearest Neighbor Button -->
                         <a class="clickable" data-toggle="modal" data-target="#nearestNeighborModal" title="Nearest Neighbor Query"><i class="fas fa-user-friends"></i></a>
+                    </li>
+                    
+                    <li>
+                        <!-- Upload GeoJSON Button -->
+                        <a class="clickable" data-toggle="modal" data-target="#uploadGeoModal" title="Upload GeoJSON"><i class="fas fa-globe"></i></a>
                     </li>
 
                     <li>
@@ -517,6 +522,41 @@
             </div>
         </div>
 
+        <!-- Upload geoJSON Modal -->
+        <!-- Upload geoJSON Modal -->
+        <!-- Upload geoJSON Modal -->
+        <div class="modal left fade" id="uploadGeoModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title" id="myModalLabel"><i class="fas fa-globe"></i>&nbsp;Upload GeoJSON</h4>
+                    </div>
+
+                    <div class="modal-body">
+
+                        <hr>
+                        <br />
+
+                        <!-- paste data -->
+                        <div style="vertical-align:top;">
+                            <p style="font-size: 12px; vertical-align: text-top;">Paste GeoJSON data here:</p>
+                            <textarea id="geoJSONTextBox" name="geoJSONTextBox" rows="4" cols="50" style="height:400px; width: 100%; font-size: 11px; padding: 2px; margin:2px">{'type': 'FeatureCollection','features': []}</textarea><br>
+                            <div style="padding-top:10px">
+                                <input type="button" value="submit" id="submitGJ" style="font-size: 10px;">
+                                <input type="button" value="clear" id="clearGJ" style="font-size: 10px;">
+                            </div>
+                        </div>
+
+                        <br />
+                        <hr>
+                        <br />
+
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <!-- Print Modal -->
         <!-- Print Modal -->
