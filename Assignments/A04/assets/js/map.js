@@ -66,6 +66,24 @@ $('#clear_general').on('click', function (e) {
 
 });
 
+$('#search_general').on('click', function (e) {
+
+    var criteria = $('#general_search').val();
+    var prop = $('#property-descr').text();
+    var layer_mapfile = $('#json_layer').val();
+
+    addJsonLayerFilter(layer_mapfile, prop, criteria);
+
+});
+
+$('#clear_general').on('click', function (e) {
+
+    $("#general_search").val("");
+    $("#property-descr").html("<br />");
+    clearFilterLayer();
+
+});
+
 // Geocoder API
 // Geocoder API
 // Geocoder API
@@ -345,6 +363,133 @@ map.on('load', function () {
 });
 
 
+//Distance between cities
+//Distance between cities
+//Distance between cities
+
+map.on('load', function () {
+
+    $(document).ready(function () {
+
+        // Purpose:     Adds a source and a layer to the map
+        // Input:       a source ID and a geojson feature object
+        // Output:      None
+        function loadSourceLayer(coordData) {
+            if (!map.getSource(coordData.properties.source)) {
+                map.addSource(coordData.properties.source, {
+                    type: 'geojson',
+                    data: coordData
+                });
+
+                map.addLayer({
+                    id: coordData.properties.source,
+                    type: coordData.properties.draw_type,
+                    source: coordData.properties.source,
+                    layout: {},
+                    paint: {},
+                });
+            }
+        };
+
+        // Purpose:     Removes a source ID and its associated layer from the map
+        // Input:       None
+        // Output:      None
+        function clearSourceLayer() {
+            // this is a call to the backend. It will feed the frontend
+            //      a key-value pair where the key is an integer equal to
+            //      to the number of feature objects to erase from the map,
+            //      and the value is an array of all the feature objects to
+            //      be removed.
+            $.getJSON("http://localhost:8888/deleteCities/", function(data) {
+                for (var i = 0; i < data.length; ++i) {
+                    if (map.getLayer(data[i])) {
+                        map.removeLayer(data[i]);
+                        map.removeSource(data[i]);
+                    }
+                }
+            })
+        };
+
+        function populateCitiesSelect(whichSelect, whichinput) {
+            let cityname = $(whichinput).val()
+            let html = ''
+            $.get("http://localhost:8888/cities/?hint=" + cityname, function (data) {
+                for (var i = 0; i < data.length; ++i) {
+                    // fix data[i]
+                    html += '<option>' + data[i] + '</option>'
+                }
+                // modify the select
+                $(whichSelect).attr("size", data.length)
+                $(whichSelect).html(html)
+            })
+        }
+
+        function emptySelectOptions(whichSelect) {
+            // modify the select
+            $(whichSelect).attr("size", "0")
+            $(whichSelect).html('<option></option>')
+        }
+
+        // suggest cities when typing in the first text box
+        $("#inputCitiesSource").keyup(function (event) {
+            if ((event.which > 64 && event.which < 91) || event.which == 32 || event.which == 8)
+                populateCitiesSelect("#citySelectSource", "#inputCitiesSource")
+        });
+
+        // autofills the city boxes when one of the selector options is clicked
+        $("#citySelectSource")
+            .change(function () {
+                var str = ""
+                $("#citySelectSource option:selected").each(function () {
+                    str = $(this).text()
+                });
+                $("#inputCitiesSource").val(str);
+                emptySelectOptions("#citySelectSource")
+            })
+            .trigger("change");
+
+        // suggest cities when typing in the second text box
+        $("#inputCitiesDest").keyup(function (event) {
+            if ((event.which > 64 && event.which < 91) || event.which == 32 || event.which == 8)
+                populateCitiesSelect("#citySelectDest", "#inputCitiesDest")
+        });
+
+        // autofills the city boxes when one of the selector options is clicked
+        $("#citySelectDest").change(function () {
+            var str = ""
+            $("#citySelectDest option:selected").each(function () {
+                str = $(this).text()
+            });
+            $("#inputCitiesDest").val(str);
+            emptySelectOptions("#citySelectDest")
+        })
+            .trigger("change");
+
+        $('#cityDist').click(function () {
+            let citynameSource = $('#inputCitiesSource').val()
+            let citynameDest = $('#inputCitiesDest').val()
+            $.get("http://localhost:8888/cityDist/?cityArgs=" + [citynameSource, citynameDest], function (data) {
+                for (var i = 0; i < 3; ++i) {
+                    loadSourceLayer(data.features[i])
+                }
+                length = turf.distance(data.features[0].geometry.coordinates, data.features[1].geometry.coordinates, 'miles');
+                // restrict  to 2 decimal points
+                rounded_distance = Math.round(length * 100) / 100;
+                lineAnswer = document.getElementById('calculated-distance');
+                lineAnswer.innerHTML = '<p>' + rounded_distance + ' mi</p>';
+                
+            });
+
+        });
+
+        $('#clearCities').click(function () {
+            $('#calculated-distance p').remove();
+            clearSourceLayer()
+        });
+    });
+});
+
+
 //Upload GeoJSON
 //Upload GeoJSON
 //Upload GeoJSON
@@ -361,7 +506,8 @@ map.on('load', function () {
                 type: 'geojson',
                 data: coordData
             });
-
+            // update this to change the layer type to whatever is in the geojson file
+            //  submitted on the frontend
             map.addLayer({
                 id: coordID,
                 type: 'circle',

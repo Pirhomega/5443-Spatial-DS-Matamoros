@@ -7,6 +7,7 @@ from flask import jsonify
 from flask_cors import CORS
 import rtree
 import json
+from urllib.parse import unquote
 
 app = Flask(__name__)
 CORS(app)
@@ -303,6 +304,98 @@ def deleteNNCoord():
 
     return str(number_of_queries_to_delete)
 
+distance_map = {
+    "cities": {
+        "path": "./Assignments/A04/assets/api/data/cities.geojson",
+        "loaded": False,
+        "map": {}
+    }
+}
+
+added_cities = []
+
+def load_cities():
+    global distance_map
+    city_letter_map = {}
+    data = json.loads(open(distance_map["cities"]["path"], 'r').read())
+    for document in data["features"]:
+        first_letter_of_name = document["properties"]["name"][0]
+        if first_letter_of_name not in city_letter_map:
+            city_letter_map[first_letter_of_name] = []
+        city_letter_map[first_letter_of_name].append(document)
+    distance_map["cities"]["map"] = city_letter_map
+    distance_map["cities"]["loaded"] = True
+
+@app.route('/cities/')
+def cities():
+    # `city_prompt` is whatever the user has typed into the search field on the front end.
+    #   For example, they are trying to type "Wichita", so the instant they type the 'W', 
+    #   this function gets called with 'W' as `city_prompt` and grabs all the cities that
+    #   start with 'W'. Then they type the 'i', which calls this function with `city_prompt`
+    #   now "Wi", grabbing all the cities that start with 'Wi'. Rinse and repeat.
+    city_prompt = unquote(request.args.get("hint")).title()
+    print(city_prompt)
+    # search cities.geojson for all cities that begin with the string `city_prompt`.
+    #   Then return those cities as a list. After the user has clicked on the city they want, 
+    #   we query the cities.geojson again to grab the coordinates of the city and draw it on
+    #   on the map.
+    if not distance_map["cities"]["loaded"]:
+        load_cities()
+    search_results = []
+    # `distance_map["cities"]["map"][city_prompt[0]]` is the first letter of the `city_prompt` argument
+    if (city_prompt) and (city_prompt[0] in distance_map["cities"]["map"]):
+        for city_document in distance_map["cities"]["map"][city_prompt[0]]:
+            if city_prompt in city_document["properties"]["name"]:
+                search_results.append(city_document["properties"]["name"])
+    if search_results == []:
+        search_results.append("No results")
+    return jsonify(search_results)
+
+@app.route('/cityDist/')
+def cityDist():
+    global added_cities
+    citySource, cityDest = request.args.get("cityArgs",None).split(',')
+    citySource = (unquote(citySource)).title()
+    cityDest = (unquote(cityDest)).title()
+    if citySource and cityDest:
+        cityDist_FeatureCollection = {
+            "type": "FeatureCollection",
+            "features": []
+        }
+        both_city_coords = []
+        for city_document in distance_map["cities"]["map"][citySource[0]]:
+            if city_document["properties"]["name"] == citySource:
+                added_cities.append(city_document["properties"]["source"])
+                cityDist_FeatureCollection["features"].append(city_document)
+                both_city_coords.append(city_document["geometry"]["coordinates"])
+                break
+        for city_document in distance_map["cities"]["map"][cityDest[0]]:
+            if city_document["properties"]["name"] == cityDest:
+                added_cities.append(city_document["properties"]["source"])
+                cityDist_FeatureCollection["features"].append(city_document)
+                both_city_coords.append(city_document["geometry"]["coordinates"])
+                break
+        cityDist_FeatureCollection["features"].append( {
+                "type": "Feature",
+                "geometry": {
+                    "type": "LineString",
+                    "coordinates": both_city_coords
+                },
+                "properties": {
+                    "draw_type": "line",
+                    "source": citySource+cityDest
+                }
+            }
+        )
+        added_cities.append(citySource+cityDest)
+    return jsonify(cityDist_FeatureCollection)
+
+@app.route('/deleteCities/')
+def deleteCities():
+    global added_cities
+    added_cities = []
+    return jsonify(added_cities)
+
 ######################################################################################
 
 if __name__ == '__main__':
@@ -316,7 +409,8 @@ if __name__ == '__main__':
         # nearest = list(new_rtree.nearest((-154.4373,57.4443,-154.4373,57.4443),5))
         # for item in nearest:
         #     print(rtree_map[item])
-        loadJSON()
+        # loadJSON()
+        # load_cities()
     # otherwise, run the app. Open the `world_map.html` in your favorite browser to
     #       begin visualization and interation with the app
     else:
