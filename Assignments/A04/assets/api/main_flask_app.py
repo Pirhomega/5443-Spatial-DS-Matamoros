@@ -357,11 +357,8 @@ def cityDist():
     citySource, cityDest = request.args.get("cityArgs",None).split(',')
     citySource = (unquote(citySource)).title()
     cityDest = (unquote(cityDest)).title()
+    cityDist_FeatureCollection = {}
     if citySource and cityDest:
-        cityDist_FeatureCollection = {
-            "type": "FeatureCollection",
-            "features": []
-        }
         both_city_coords = []
         for city_document in distance_map["cities"]["map"][citySource[0]]:
             if city_document["properties"]["name"] == citySource:
