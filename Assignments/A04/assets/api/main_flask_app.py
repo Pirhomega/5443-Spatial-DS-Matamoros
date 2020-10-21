@@ -1,4 +1,5 @@
 from os import path
+from re import search
 from sys import argv
 from json import loads
 from flask import Flask
@@ -6,6 +7,7 @@ from flask import request
 from flask import jsonify
 from flask_cors import CORS
 import rtree
+import geopandas
 import json
 from urllib.parse import unquote
 
@@ -198,18 +200,17 @@ def process_datasets(datasets):
     for dataset in datasets:
         if datasets[dataset]:
             if not dataset_map[dataset]["loaded"]:
-                # CAUSES ERROR BECAUSE IF THIS IF STATEMENT DOESN'T RUN, WE GET A "VARIABLE REFERENCED BEFORE ASSIGNMENT" ERROR DOWN THERE
                 loaded_dataset_with_properties = load_data_into_Rtree(dataset_map[dataset]["path"])
                 dataset_map[dataset]["loaded"] = True
                 dataset_map[dataset]["rtree"] = loaded_dataset_with_properties[0]
                 dataset_map[dataset]["idmap"] = loaded_dataset_with_properties[1]
             else:
                 loaded_dataset_with_properties = (dataset_map[dataset]["rtree"], dataset_map[dataset]["idmap"])
-            # HERE IS WHERE THE ERROR GETS CAUGHT
             searchable_datasets.append(loaded_dataset_with_properties)
     return searchable_datasets
     
 def load_data_into_Rtree(path_to_dataset):
+    data = str
     if path.isfile(path_to_dataset):
         with open(path_to_dataset, 'r') as f:
             data = f.read()
@@ -395,12 +396,69 @@ def deleteCities():
 
 ######################################################################################
 
+@app.route('/boundingBoxQuery/')
+def boundingBoxQuery():
+    coord_results = []
+    feature_results = []
+    BBparams = json.loads(request.args.get("BBparams", None))
+    # searchable_datasets = [(datasetRtree1, Rtree2DatasetMap1),(datasetRtree2, Rtree2DatasetMap2),(datasetRtree3, Rtree2DatasetMap3)]
+    top, left, bottom, right = \
+        float(BBparams["bbox"][0].split(',')[0]), \
+        float(BBparams["bbox"][0].split(',')[1]), \
+        float(BBparams["bbox"][1].split(',')[0]), \
+        float(BBparams["bbox"][1].split(',')[1])
+    searchable_datasets = process_datasets(BBparams["datasets"])
+    print(searchable_datasets[0][0])
+    # print(right, top, left, bottom)
+    for dataset in searchable_datasets:
+        coord_results = list(dataset[0].intersection((right, top, left, bottom)))
+        # print(coord_results)
+        for coordID in coord_results:
+            # since the format of the json data is not GeoJSON (it has an 'id' field), 
+            #       we create a GeoJSON-friendly dict and append it to `all_nearest_neighbors`
+            #       Remember, `dataset[1]` is `rtreeID_to_id` which maps the rtree id to the geojson document
+            #       from the original .geojson file
+            feature_results.append({
+                    'type': 'Feature',
+                    'geometry': {
+                        'type' : 'Point',
+                        'coordinates': [dataset[1][coordID]['geometry']['coordinates'][1], dataset[1][coordID]['geometry']['coordinates'][0]]
+                    },
+                    'properties': dataset[1][coordID]['properties']
+                })
+    return jsonify(feature_results)
+
+######################################################################################
+
+railroads = {
+    "path": "./Assignments/A04/assets/api/data/us_railroads.geojson",
+    "loaded": False,
+    "map": {}
+}
+
+def load_railroads():
+    # when reading a file into a geopandas data structure, the lat/lon needs to
+    #   be ordered as `coordinate: [lat, lon]` and not `coordinate: [lon, lat]`
+    #   This is the opposite how mapbox does things, so keeping the ordering
+    #   straight will be tasking.
+    pass
+
+@app.route('/findrailroads/')
+def findrailroads():
+    global railroads
+    # load the railroads data if it hasn't been already
+    if not railroads["loaded"]:
+        load_railroads()
+
+######################################################################################
+
 if __name__ == '__main__':
     # if the user launched the script in debugger mode
     #       run these tests
     debug = argv[1]
     if debug == "True":
         print("debug on")
+        # print(geopandas.read_file("Assignments/A04/assets/api/data/cities.geojson"))
         # new_data = get_earthquakes()
         # new_rtree, rtree_map = load_into_rtree(new_data)
         # nearest = list(new_rtree.nearest((-154.4373,57.4443,-154.4373,57.4443),5))

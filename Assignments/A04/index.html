@@ -215,6 +215,12 @@
                     </li>
 
                     <li>
+                        <!-- Bounding Box Query Button -->
+                        <a class="stop-print-click" id='mapboxgl-ctrl-print' data-toggle='modal'
+                            data-target='#drawBBModal' title="Bounding Box Query"><i class="fas fa-box"></i></a>
+                    </li>
+
+                    <li>
                         <!-- Nearest Neighbor Button -->
                         <a class="clickable" data-toggle="modal" data-target="#nearestNeighborModal"
                             title="Nearest Neighbor Query"><i class="fas fa-user-friends"></i></a>
@@ -228,8 +234,8 @@
 
                     <li>
                         <!-- Upload GeoJSON Button -->
-                        <a class="clickable" data-toggle="modal" data-target="#uploadGeoModal"
-                        title="Upload GeoJSON"><i class="fas fa-globe"></i></a>
+                        <a class="clickable" data-toggle="modal" data-target="#uploadGeoModal" title="Upload GeoJSON"><i
+                                class="fas fa-globe"></i></a>
                     </li>
 
                     <li>
@@ -243,7 +249,6 @@
                         <a class="stop-print-click" id='mapboxgl-ctrl-print' data-toggle='modal'
                             data-target='#map-print-modal' title="Print Map"><i class="fa fa-fw fa-print"></i></a>
                     </li>
-
                 </ul>
             </div>
         </nav>
@@ -504,6 +509,91 @@
             </div>
         </div>
 
+
+        <!-- Bounding Box Query Modal -->
+        <!-- Bounding Box Query Modal -->
+        <!-- Bounding Box Query Modal -->
+        <div class="modal left fade" id="drawBBModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                                aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title" id="myModalLabel"><i class="fas fa-box"></i>&nbsp;Bounding Box Query
+                        </h4>
+                    </div>
+
+                    <div class="modal-body">
+                    
+                        <hr>
+                        <br />
+
+                        <p style="font-size: 12px"><i class="fas fa-comment"></i> Instructions</p>
+                        <div class="instructions">
+                            Select a dataset to query. Click anywhere on the map to display coordinates.
+                            Click "submit top left" or "submit bottom right" to create the bounding box.
+                            Lastly, click "query" to locate all points within that bounding box.
+                        </div>
+
+                        <br />
+                        <hr>
+                        <br />
+
+                        <!-- select data -->
+                        <div style="vertical-align:top;">
+                            <p style="font-size: 12px"><i class="fas fa-map-marked-alt"></i> Select Dataset</p>
+                            <input type="checkbox" id='earthquakes' name='dataset' checked
+                                style="font-size: 10px; padding: 2px; margin:2px">
+                            <label for='earthquakes'>Earthquakes</label><br>
+                            <!-- <input type="checkbox" id='volcanos' name='dataset' checked style="font-size: 10px; padding: 2px; margin:2px">
+                            <label for='volcanos'>Volcanos</label><br>
+                            <input type="checkbox" id='ufos' name='ufos' checked style="font-size: 10px; padding: 2px; margin:2px">
+                            <label for='ufos'>UFO sightings</label><br> -->
+                        </div>
+
+                        <br />
+                        <hr>
+                        <br />
+
+                        <!-- enter lng/lat -->
+                        <div style="vertical-align:top;">
+                            <p style="font-size: 12px"><i class="fas fa-map-marked-alt"></i> Bounding Box (lon, lat)</p>
+                            <input type="text" id='topLeftBB' style="font-size: 11px; padding: 2px; margin:2px"
+                                placeholder="Top Left"><br>
+                            <input type="text" id='bottomRightBB' style="font-size: 11px; padding: 2px; margin:2px"
+                                placeholder="Bottom Right"><br>
+
+                            <div style="padding-top:10px">
+                                <input type="button" value="query" id="queryBBButton" style="font-size: 10px;">
+                                <input type="button" value="visualize" id="queryBBButtonViz" style="font-size: 10px;">
+                                <input type="button" value="clear" id="queryBBButtonClear" style="font-size: 10px;">
+                            </div>
+                        </div>
+
+                        <br />
+                        <hr>
+                        <br />
+
+                        <!-- lng/lat on map click -->
+                        <p style="font-size: 12px"><i class="fas fa-mouse-pointer"></i> Click on map to find lng/lat:
+                        </p>
+                        <pre id='pointBB'><i class="fa fa-fw fa-globe"></i> lng/lat</pre>
+                        
+                        <div style="padding-top:10px">
+                            <input type="button" value="submit top left" id="fillTopLeft" style="font-size: 10px;">
+                            <input type="button" value="submit bottom right" id="fillBottomRight" style="font-size: 10px;">
+                        </div>
+
+                        <br />
+                        <hr>
+                        <br />
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Nearest Neighbor Modal -->
         <!-- Nearest Neighbor Modal -->
         <!-- Nearest Neighbor Modal -->
@@ -594,25 +684,30 @@
                     <div class="modal-header">
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
                                 aria-hidden="true">&times;</span></button>
-                        <h4 class="modal-title" id="myModalLabel"><i class="fas fa-city"></i>&nbsp;Distance between cities</h4>
+                        <h4 class="modal-title" id="myModalLabel"><i class="fas fa-city"></i>&nbsp;Distance between
+                            cities</h4>
                     </div>
 
                     <!-- search for city -->
                     <div class="modal-body">
-                        <p style="margin-bottom: -1px; padding: 0px 0px 5px 0px; width: 100%;"><br />Select a starting city...</p>
-                        <input type="text" id="inputCitiesSource" name="inputCitiesSource" style="font-size: 11px; padding: 2px; margin:2px">
+                        <p style="margin-bottom: -1px; padding: 0px 0px 5px 0px; width: 100%;"><br />Select a starting
+                            city...</p>
+                        <input type="text" id="inputCitiesSource" name="inputCitiesSource"
+                            style="font-size: 11px; padding: 2px; margin:2px">
                         <select class="city-picker" id="citySelectSource" size="0">
                             <option></option>
                         </select>
 
                         <br />
 
-                        <p style="margin-bottom: -1px; padding: 0px 0px 5px 0px; width: 100%;"><br />Select a destination city...</p>
-                        <input type="text" id="inputCitiesDest" name="inputCitiesDest" style="font-size: 11px; padding: 2px; margin:2px">
+                        <p style="margin-bottom: -1px; padding: 0px 0px 5px 0px; width: 100%;"><br />Select a
+                            destination city...</p>
+                        <input type="text" id="inputCitiesDest" name="inputCitiesDest"
+                            style="font-size: 11px; padding: 2px; margin:2px">
                         <select class="city-picker" id="citySelectDest" size="0">
                             <option></option>
                         </select>
-                        
+
                         <div style="padding-top:10px">
                             <input type="button" value="submit" id="cityDist" style="font-size: 10px;">
                             <input type="button" value="clear" id="clearCities" style="font-size: 10px;">
