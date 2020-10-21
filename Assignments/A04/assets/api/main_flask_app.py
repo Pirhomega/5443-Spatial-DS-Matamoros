@@ -408,7 +408,7 @@ def boundingBoxQuery():
         float(BBparams["bbox"][1].split(',')[0]), \
         float(BBparams["bbox"][1].split(',')[1])
     searchable_datasets = process_datasets(BBparams["datasets"])
-    print(searchable_datasets[0][0])
+    # print(searchable_datasets[0][0])
     # print(right, top, left, bottom)
     for dataset in searchable_datasets:
         coord_results = list(dataset[0].intersection((right, top, left, bottom)))
@@ -420,10 +420,7 @@ def boundingBoxQuery():
             #       from the original .geojson file
             feature_results.append({
                     'type': 'Feature',
-                    'geometry': {
-                        'type' : 'Point',
-                        'coordinates': [dataset[1][coordID]['geometry']['coordinates'][1], dataset[1][coordID]['geometry']['coordinates'][0]]
-                    },
+                    'geometry': dataset[1][coordID]['geometry'],
                     'properties': dataset[1][coordID]['properties']
                 })
     return jsonify(feature_results)
