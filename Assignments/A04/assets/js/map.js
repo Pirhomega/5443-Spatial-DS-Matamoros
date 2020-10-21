@@ -242,6 +242,179 @@ map.on('load', function () {
     });
 });
 
+// Bounding Box Query
+// Bounding Box Query
+// Bounding Box Query
+
+map.on('load', function () {
+
+    $(document).ready(function () {
+
+        var bbFeature = {}
+
+        var resultsFeature_Collection = {
+            "type": "FeatureCollection",
+            "features": []
+        }
+
+        // Purpose:     Adds a source and a layer to the map
+        // Input:       a source ID and a geojson feature object
+        // Output:      None
+        function loadSourceLayer() {
+            // console.log(bbFeature)
+            if (!map.getSource("bBoxes")) {
+                console.log("No bBoxes source. Making one.")
+                map.addSource("bBoxes", {
+                    'type': 'geojson',
+                    'data': bbFeature
+                });
+            } else {
+                map.getSource("bBoxes").setData(
+                    bbFeature
+                )
+            }
+
+            if (!map.getSource("coordsBB")) {
+                console.log("No coordsBB source. Making one.")
+                map.addSource("coordsBB", {
+                    'type': 'geojson',
+                    'data': resultsFeature_Collection
+                });
+            } else {
+                map.getSource("coordsBB").setData(
+                    resultsFeature_Collection
+                )
+            }
+
+            if (!map.getLayer("bBoxOutline")) {
+                console.log("No bBoxOutline layer. Making one.")
+                map.addLayer({
+                    'id': "bBoxOutline",
+                    'type': 'fill',
+                    'source': "bBoxes",
+                    'paint': {
+                        'fill-color': "#888888",
+                        'fill-opacity': 0.4
+                    }
+                })
+            }
+            if (!map.getLayer("bBoxContained")) {
+                console.log("No bBoxContained layer. Making one.")
+                map.addLayer({
+                    'id': "bBoxContained",
+                    'type': 'circle',
+                    'source': "coordsBB",
+                    'layout': {},
+                    'paint': {
+                        "circle-color": 'red',
+                        "circle-radius": 8,
+                    },
+                })
+            }
+        };
+
+        // Purpose:     Removes a source ID and its associated layer from the map
+        // Input:       None
+        // Output:      None
+        function clearSourceLayer() {
+            if (map.getLayer("bBoxOutline")) {
+                map.removeLayer("bBoxOutline");
+            }
+            if (map.getLayer("bBoxContained")) {
+                map.removeLayer("bBoxContained");
+            }
+        }
+
+        function chooseDataset() {
+            return {
+                "datasets": {
+                    "earthquakes": document.getElementById("earthquakes").checked
+                    // "volcanos": document.getElementById("volcanos").checked,
+                    // "planes": document.getElementById("planes").checked,
+                    // "ufos": document.getElementById("ufos").checked
+                }
+            }
+        };
+
+        //fill top left
+        $('#fillTopLeft').click(function () {
+            $('#topLeftBB').val($('#pointBB').text())
+        });
+
+        //fill bottom right
+        $('#fillBottomRight').click(function () {
+            $('#bottomRightBB').val($('#pointBB').text())
+        });
+
+        //find
+        $('#queryBBButton').click(function () {
+            if ($('#topLeftBB').val() && $('#bottomRightBB').val()) {
+                let topLeft = $('#topLeftBB').val()
+                let bottomRight = $('#bottomRightBB').val()
+                let BBparams = $.extend({ "bbox": [topLeft, bottomRight] }, chooseDataset())
+                console.log(BBparams)
+
+                $.getJSON("http://localhost:8888/boundingBoxQuery/?BBparams=" + JSON.stringify(BBparams))
+                    .done(function (data) {
+                        console.log(data)
+                        resultsFeature_Collection.features = data
+                        loadSourceLayer()
+                    })
+            }
+        });
+
+        //visualize
+        $('#queryBBButtonViz').click(function () {
+            if ($('#topLeftBB').val() && $('#bottomRightBB').val()) {
+                let topLeft = $.map($('#topLeftBB').val().split(','), function (value) {
+                    return parseFloat(value, 10)
+                });
+                let bottomRight = $.map($('#bottomRightBB').val().split(','), function (value) {
+                    return parseFloat(value, 10)
+                });
+                let topRight = [bottomRight[0], topLeft[1]]
+                let bottomLeft = [topLeft[0], bottomRight[1]]
+                // console.log(topLeft, bottomRight)
+                bbFeature = {
+                    "type": "Feature",
+                    "properties": {},
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [
+                            [
+                                topLeft,
+                                topRight,
+                                bottomRight,
+                                bottomLeft,
+                                topLeft
+                            ]
+                        ]
+                    }
+                }
+                clearSourceLayer()
+                loadSourceLayer()
+            }
+        })
+
+        //clear
+        $('#queryBBButtonClear').click(function () {
+            bbFeature = {}
+            resultsFeature_Collection.features = []
+            clearSourceLayer()
+            $('#topLeftBB').val('')
+            $('#bottomRightBB').val('')
+        });
+    });
+});
+
+// Bounding Box Creator Tool
+// Bounding Box Creator Tool
+// Bounding Box Creator Tool
+map.on(touchEvent, function (e) {
+    document.getElementById('pointBB').innerHTML =
+        JSON.stringify(e.lngLat, function (key, val) { return val.toFixed ? Number(val.toFixed(4)) : val; }).replace('{"lng":', '').replace('"lat":', ' ').replace('}', '')
+});
+
 //Nearest Neighbor Query
 //Nearest Neighbor Query
 //Nearest Neighbor Query
@@ -337,7 +510,6 @@ map.on('load', function () {
             // creates a geojson feature object with the lng and lat values
             var enterLL = { "geojson": turf.point([enterLng, enterLat]) }
             var NNparams = $.extend({}, selectedDatasets, selectQueryType, enterLL)
-            console.log(NNparams)
 
             // makes a call to the backend to save the feature object in a
             //      feature collection
@@ -400,7 +572,7 @@ map.on('load', function () {
             //      to the number of feature objects to erase from the map,
             //      and the value is an array of all the feature objects to
             //      be removed.
-            $.getJSON("http://localhost:8888/deleteCities/", function(data) {
+            $.getJSON("http://localhost:8888/deleteCities/", function (data) {
                 for (var i = 0; i < data.length; ++i) {
                     if (map.getLayer(data[i])) {
                         map.removeLayer(data[i]);
@@ -477,7 +649,7 @@ map.on('load', function () {
                 rounded_distance = Math.round(length * 100) / 100;
                 lineAnswer = document.getElementById('calculated-distance');
                 lineAnswer.innerHTML = '<p>' + rounded_distance + ' mi</p>';
-                
+
             });
 
         });

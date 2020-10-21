@@ -40,6 +40,14 @@
         width: auto;
     }
 
+    #drawBBModal {
+        position: absolute;
+        left: 0px;
+        right: auto;
+        bottom: auto;
+        width: auto;
+    }
+
     #nearestNeighborModal {
         position: absolute;
         left: 0px;
