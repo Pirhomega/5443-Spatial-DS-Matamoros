@@ -100,7 +100,7 @@ def saveCoord():
         'type': 'Feature',
         'geometry': {
             'type': 'Point',
-            'coordinates': [int(lon), int(lat)]
+            'coordinates': [float(lon), float(lat)]
         },
         'properties': {
             'source': str(source)
@@ -358,7 +358,10 @@ def cityDist():
     citySource, cityDest = request.args.get("cityArgs",None).split(',')
     citySource = (unquote(citySource)).title()
     cityDest = (unquote(cityDest)).title()
-    cityDist_FeatureCollection = {}
+    cityDist_FeatureCollection = {
+        "type": "FeatureCollection",
+        "features": []
+    }
     if citySource and cityDest:
         both_city_coords = []
         for city_document in distance_map["cities"]["map"][citySource[0]]:
