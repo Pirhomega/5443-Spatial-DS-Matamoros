@@ -16,58 +16,6 @@ CORS(app)
 
 ##############################################################################
 
-# # loads a GeoJSON file into memory and stores it as a dictionary
-# # Here, we load a file of countries
-# def get_countries():
-#     data_file = 'data/countries.geo.json'
-#     if path.isfile(data_file):
-#         with open(data_file, 'r') as f:
-#             data = f.read()
-#     else:
-#         return jsonify({"Error":"countries.geo.json not there!!"})
-#     return loads(data)
-
-# loads a JSON file into memory and stores it as a dictionary
-# Here, we load a file of earthquakes
-# The only problem with this file is it is not a GeoJSON file, so
-#       we must make one from scratch and pass it to the frontend
-#       whenever we query this earthquake data
-def get_earthquakes():
-    data_file = 'data/eq_2019_10.json'
-    if path.isfile(data_file):
-        with open(data_file, 'r') as f:
-            data = f.read()
-    else:
-        return jsonify({"Error":f"{data_file} does not exist!"})
-    return loads(data)
-
-# loads all earthquake location data into a R-tree with a unique id
-def load_into_rtree(earthquakes):
-    # an rtree that can hold a geometric data structure, like a rectangle or a point,
-    #       and an id (which does not have to be unique, but we will make it so). 
-    earthquake_rtree = rtree.index.Index()
-    # since we can't store any more data in the rtree's nodes, we will keep a dictionary
-    #       to map the rtree node id's and the id's of the earthquake (in the .json file
-    #       we loaded back in `get_earthquakes`)
-    rtreeID_to_id = {}
-    # the unique id for each node in the R-tree
-    id = 0
-    for document in earthquakes["features"]:
-        # for every document in the earthquakes dictionary, if the location of the earthquakes is
-        #       a point, load it into the rtree
-        if document["type"] == "Feature" and document["geometry"]["type"] == "Point":
-            # 2D coordinates must be loaded into the R-tree as `(topleft_x, topleft_y, bottomright_x, bottomright_y)`
-            #       For a point, that's just (x, y, x, y)
-            earthquake_coord = (document["geometry"]["coordinates"][0], document["geometry"]["coordinates"][1], \
-                                document["geometry"]["coordinates"][0], document["geometry"]["coordinates"][1])
-            earthquake_rtree.insert(id, earthquake_coord)
-            # map the R-tree id with the actual json data file document
-            rtreeID_to_id[id] = document
-            id += 1
-    return earthquake_rtree, rtreeID_to_id
-
-##############################################################################
-
 results_featurecollection = {
             'type': 'FeatureCollection',
             'features': []
