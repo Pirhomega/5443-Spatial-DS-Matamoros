@@ -11,8 +11,8 @@ This project utilizes and builds on [Portmap](https://github.com/portofportlandg
 |   #   | Folder Link | Assignment Description |
 | :---: | ----------- | ---------------------- |
 |   1    | [main_flask_app.py](./assets/api/main_flask_app.py) | App backend that runs locally and processes requests (clicks and URLs) from the frontend |
-|   2    | [index.html](index.html) | Interactive HTML map of the world |
-|   3    | [map.js](./assets/js/map.js) | The javascript/JQuery code that works with `index.html` |
+|   2    | [index.html](index.html) | Interactive HTML map of the world. My code goes from line 445 - 762 |
+|   3    | [map.js](./assets/js/map.js) | The javascript/JQuery code that works with `index.html`. My code goes from line 129 - 733|
 |   4    | [A04.yml](A04.yml) | conda environment file to install all dependencies necessary to run this project |
 
 ## Instructions
