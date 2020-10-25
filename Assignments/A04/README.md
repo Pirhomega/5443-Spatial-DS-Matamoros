@@ -1,9 +1,40 @@
-# PortMap
+# Assignment 4 - Geospatial Data manipulation and processing
+
+## Corbin Matamoros
+
+## Description
+
+This project utilizes and builds on [Portmap](https://github.com/portofportlandgis/portmap) (documentation below) to perform queries on geospatial data such as nearest neighbor queries, bounding box operations, spatial data visualization, and more (see functionality section -- WIP -- below for details). The backend is programmed in Python and run using [Flask](https://flask.palletsprojects.com/en/1.1.x/). The frontend is HTML with JQuery and Javascript.
+
+## Files
+
+|   #   | Folder Link | Assignment Description |
+| :---: | ----------- | ---------------------- |
+|   1    | [main_flask_app.py](./assets/api/main_flask_app.py) | App backend that runs locally and processes requests (clicks and URLs) from the frontend |
+|   2    | [index.html](index.html) | Interactive HTML map of the world |
+|   3    | [map.js](./assets/js/map.js) | The javascript/JQuery code that works with `index.html` |
+|   4    | [A04.yml](A04.yml) | conda environment file to install all dependencies necessary to run this project |
+
+## Instructions
+
+1. Download the repo and use the [A04.yml](A04.yml) in [Miniconda](https://docs.conda.io/en/latest/miniconda.html) or [Anaconda](https://conda.io/projects/conda/en/latest/user-guide/install/index.html) to get your computer the necessary supportive software.
+
+2. Run the flask app by executing it in the conda environment. Execute from the root of the repo. The command would look something like this: `~/miniconda3/python.exe ./Assignments/A04/assets/api/geotest.py`
+
+3. Run the `index.html` on a server, such as [Live Server](https://marketplace.visualstudio.com/items?itemName=ritwickdey.LiveServer)
+
+4. Hopefully everything is running. Click the buttons on the left side to access the functionality.
+
+#
+
+# PortMap Documentation
+
 A responsive web map application template using [Bootstrap](https://getbootstrap.com/) and [Mapbox GL](https://www.mapbox.com/mapbox-gl-js/api/)
 
-To get started you need to generate a Mapbox ID. Get your ID by creating a Mapbox account. Insert your Mapbox ID in assets/js/map.js on line 1. 
+To get started you need to generate a Mapbox ID. Get your ID by creating a Mapbox account. Insert your Mapbox ID in assets/js/map.js on line 1.
 
-## What it does:
+## What it does
+
 * Layer tree allows the user to interactively organize and reposition map layers using [Mapbox-GL-JS-Layer-Tree](https://github.com/TheGartrellGroup/Mapbox-GL-JS-Layer-Tree)
 * Layer Tree pulls feature symbology automatically via [Font Awesome](http://fontawesome.io/ )
 * Supports drawing and editing using [Mapbox Draw API](https://github.com/mapbox/mapbox-gl-draw)

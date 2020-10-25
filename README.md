@@ -17,4 +17,5 @@ Repo for the Fall 2020 class at Midwestern State University with Professor Terry
 ├── .gitignore
 ├── Assignments
 ├────── A03
+├────── A04
 ```
