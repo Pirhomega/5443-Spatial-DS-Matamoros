@@ -1,5 +1,4 @@
 from os import path
-from re import search
 from sys import argv
 from json import loads
 from flask import Flask
@@ -9,75 +8,32 @@ from flask_cors import CORS
 import rtree
 import geopandas
 import json
+import numpy as np
+from scipy.spatial import cKDTree
 from urllib.parse import unquote
 
 app = Flask(__name__)
 CORS(app)
 
-##############################################################################
-
-# # loads a GeoJSON file into memory and stores it as a dictionary
-# # Here, we load a file of countries
-# def get_countries():
-#     data_file = 'data/countries.geo.json'
-#     if path.isfile(data_file):
-#         with open(data_file, 'r') as f:
-#             data = f.read()
-#     else:
-#         return jsonify({"Error":"countries.geo.json not there!!"})
-#     return loads(data)
-
-# loads a JSON file into memory and stores it as a dictionary
-# Here, we load a file of earthquakes
-# The only problem with this file is it is not a GeoJSON file, so
-#       we must make one from scratch and pass it to the frontend
-#       whenever we query this earthquake data
-def get_earthquakes():
-    data_file = 'data/eq_2019_10.json'
-    if path.isfile(data_file):
-        with open(data_file, 'r') as f:
-            data = f.read()
-    else:
-        return jsonify({"Error":f"{data_file} does not exist!"})
-    return loads(data)
-
-# loads all earthquake location data into a R-tree with a unique id
-def load_into_rtree(earthquakes):
-    # an rtree that can hold a geometric data structure, like a rectangle or a point,
-    #       and an id (which does not have to be unique, but we will make it so). 
-    earthquake_rtree = rtree.index.Index()
-    # since we can't store any more data in the rtree's nodes, we will keep a dictionary
-    #       to map the rtree node id's and the id's of the earthquake (in the .json file
-    #       we loaded back in `get_earthquakes`)
-    rtreeID_to_id = {}
-    # the unique id for each node in the R-tree
-    id = 0
-    for document in earthquakes["features"]:
-        # for every document in the earthquakes dictionary, if the location of the earthquakes is
-        #       a point, load it into the rtree
-        if document["type"] == "Feature" and document["geometry"]["type"] == "Point":
-            # 2D coordinates must be loaded into the R-tree as `(topleft_x, topleft_y, bottomright_x, bottomright_y)`
-            #       For a point, that's just (x, y, x, y)
-            earthquake_coord = (document["geometry"]["coordinates"][0], document["geometry"]["coordinates"][1], \
-                                document["geometry"]["coordinates"][0], document["geometry"]["coordinates"][1])
-            earthquake_rtree.insert(id, earthquake_coord)
-            # map the R-tree id with the actual json data file document
-            rtreeID_to_id[id] = document
-            id += 1
-    return earthquake_rtree, rtreeID_to_id
-
-##############################################################################
-
-results_featurecollection = {
-            'type': 'FeatureCollection',
-            'features': []
-            }
-source = -1
-
 @app.route('/')
 def index():
     return 'This is the base route'
 
+"""
+ /$$                                       /$$     /$$                           /$$$$$$$$                  /$$          
+| $$                                      | $$    |__/                          |__  $$__/                 | $$          
+| $$        /$$$$$$   /$$$$$$$  /$$$$$$  /$$$$$$   /$$  /$$$$$$  /$$$$$$$          | $$  /$$$$$$   /$$$$$$ | $$  /$$$$$$$
+| $$       /$$__  $$ /$$_____/ |____  $$|_  $$_/  | $$ /$$__  $$| $$__  $$         | $$ /$$__  $$ /$$__  $$| $$ /$$_____/
+| $$      | $$  \ $$| $$        /$$$$$$$  | $$    | $$| $$  \ $$| $$  \ $$         | $$| $$  \ $$| $$  \ $$| $$|  $$$$$$ 
+| $$      | $$  | $$| $$       /$$__  $$  | $$ /$$| $$| $$  | $$| $$  | $$         | $$| $$  | $$| $$  | $$| $$ \____  $$
+| $$$$$$$$|  $$$$$$/|  $$$$$$$|  $$$$$$$  |  $$$$/| $$|  $$$$$$/| $$  | $$         | $$|  $$$$$$/|  $$$$$$/| $$ /$$$$$$$/
+|________/ \______/  \_______/ \_______/   \___/  |__/ \______/ |__/  |__/         |__/ \______/  \______/ |__/|_______/ 
+"""
+
+saveCoords_featurecollection = {
+            'type': 'FeatureCollection',
+            'features': []
+            }
 
 @app.route('/saveCoord/')
 def saveCoord():
@@ -89,51 +45,22 @@ def saveCoord():
     Output:     A source ID integer that the frontend will use to name the spot
                     on the map represented by the longitude and latitude inputted.
     """
-    global source, results_featurecollection
-    # the source integer the frontend will use to identify the spot with `lat, lon`
-    source += 1
+    global saveCoords_featurecollection
     # the longitude and latitude values from the frontend
     lon, lat = request.args.get("lngLat",None).split(',')
     # append the properly formatted geojson object with the above coords
     #    to the feature collection
-    results_featurecollection['features'].append({
+    saveCoords_featurecollection['features'].append({
         'type': 'Feature',
         'geometry': {
             'type': 'Point',
             'coordinates': [float(lon), float(lat)]
         },
-        'properties': {
-            'source': str(source)
-        }
+        'properties': {}
     })
     # send the source ID to the frontend for when it creates a layer to
     #   show the coord on the map
-    return (str(source))
-
-@app.route('/deleteCoord/')
-def deleteCoord():
-    """
-    Purpose:    Remove all features from the `results_featurecollection` geojson object
-                    This is called whenever the frontend erases all spots/layers from
-                    map.
-    Input:      None
-    Output:     A dictionary with a key equal to the number of coords the frontend
-                    will delete from the map and a value equal to a list of the
-                    feature objects the frontend will delete (these feature objects 
-                    are properly formatted geojson features)
-    """
-    global source, results_featurecollection
-    # reset source's value so the next coord to be added to the map will have a source
-    #   value of zero
-    source = -1
-    # the number of coords to erase from the map and results_featurecollection
-    coordCount = len(results_featurecollection['features'])
-    # save the list of features to be erased to a temp variable.
-    #   Then set the 'features' list to be empty
-    json_coords_to_be_deleted = results_featurecollection['features']
-    results_featurecollection['features'] = []
-
-    return jsonify(coordCount,json_coords_to_be_deleted)
+    return jsonify(saveCoords_featurecollection['features'])
 
 @app.route('/saveJSON/')
 def saveJSON():
@@ -144,8 +71,8 @@ def saveJSON():
     Output:     A trivial integer that the frontend needs so the backend doesn't crash.
                 (The backend needs to return something, apparently)
     """
-    with open('./Assignments/A04/assets/api/data/mapCoords.geojson', 'w') as out:
-        json.dump(results_featurecollection, out, indent="    ")
+    with open('./Assignments/A04/assets/api/data/savedJSON.geojson', 'w') as out:
+        json.dump(saveCoords_featurecollection, out, indent="  ")
     return "1"
 
 @app.route('/loadJSON/')
@@ -158,88 +85,96 @@ def loadJSON():
     Output:     A python dictionary with the key equal to the number of feature objects,
                     and a value of a list of feature objects
     """
-    with open('./Assignments/A04/assets/api/data/mapCoords.geojson', 'r') as infile:
-        global source, results_featurecollection
-        # store the .geojson contents into `results_featurecollection`
-        results_featurecollection = json.load(infile)
-        coordCount = len(results_featurecollection['features'])
-        # update source to be equal to the number of feature objects loaded
-        #   into the feature collection. That way, the user can add more coords
-        #   to the map and the source values resume from the last feature object
-        #   loaded here
-        source = coordCount
-        return jsonify(coordCount,results_featurecollection['features'])
+    with open('./Assignments/A04/assets/api/data/savedJSON.geojson', 'r') as infile:
+        global saveCoords_featurecollection
+        # store the .geojson contents into `saveCoords_featurecollection`
+        jsonFeatureCollection = json.load(infile)
+        saveCoords_featurecollection["features"] += jsonFeatureCollection["features"]
 
-###############################################################################################
+        return jsonify(saveCoords_featurecollection['features'])
 
+@app.route('/deleteJSON/')
+def deleteCoord():
+    """
+    Purpose:    Remove all features from the `results_featurecollection` geojson object
+    Input:      None
+    Output:     A dictionary with a key equal to the number of coords the frontend
+                    will delete from the map and a value equal to a list of the
+                    feature objects the frontend will delete (these feature objects 
+                    are properly formatted geojson features)
+    """
+    global saveCoords_featurecollection
+    saveCoords_featurecollection['features'] = []
+
+    return "1"
+
+"""
+ /$$   /$$                                                     /$$           /$$   /$$           /$$           /$$       /$$                          
+| $$$ | $$                                                    | $$          | $$$ | $$          |__/          | $$      | $$                          
+| $$$$| $$  /$$$$$$   /$$$$$$   /$$$$$$   /$$$$$$   /$$$$$$$ /$$$$$$        | $$$$| $$  /$$$$$$  /$$  /$$$$$$ | $$$$$$$ | $$$$$$$   /$$$$$$   /$$$$$$ 
+| $$ $$ $$ /$$__  $$ |____  $$ /$$__  $$ /$$__  $$ /$$_____/|_  $$_/        | $$ $$ $$ /$$__  $$| $$ /$$__  $$| $$__  $$| $$__  $$ /$$__  $$ /$$__  $$
+| $$  $$$$| $$$$$$$$  /$$$$$$$| $$  \__/| $$$$$$$$|  $$$$$$   | $$          | $$  $$$$| $$$$$$$$| $$| $$  \ $$| $$  \ $$| $$  \ $$| $$  \ $$| $$  \__/
+| $$\  $$$| $$_____/ /$$__  $$| $$      | $$_____/ \____  $$  | $$ /$$      | $$\  $$$| $$_____/| $$| $$  | $$| $$  | $$| $$  | $$| $$  | $$| $$      
+| $$ \  $$|  $$$$$$$|  $$$$$$$| $$      |  $$$$$$$ /$$$$$$$/  |  $$$$/      | $$ \  $$|  $$$$$$$| $$|  $$$$$$$| $$  | $$| $$$$$$$/|  $$$$$$/| $$      
+|__/  \__/ \_______/ \_______/|__/       \_______/|_______/    \___/        |__/  \__/ \_______/|__/ \____  $$|__/  |__/|_______/  \______/ |__/      
+                                                                                                     /$$  \ $$                                        
+                                                                                                    |  $$$$$$/                                        
+                                                                                                     \______/                                         
+"""
+
+
+# the commented key-value pairs in `dataset_map` represent fields that will be added
+#   once the nearest neighbor function is called and the datasets are loaded
 dataset_map = {
     "earthquakes": {
         "path": "./Assignments/A04/assets/api/data/earthquakes.geojson",
-        "loaded": False,
-        "rtree": rtree.index.Index(),
-        "idmap": {}
+        "loaded": False
+        # "kdtree": scipy.cKDTree()
+        # "dataframe": GeoDataFrame()
+        # "npArray": np.array()
         },
     "volcanos": {
         "path": "./Assignments/A04/assets/api/data/volcanos.geojson",
-        "loaded": False,
-        "rtree": rtree.index.Index(),
-        "idmap": {}
-        },
-    "ufos": {
-        "path": "./Assignments/A04/assets/api/data/ufos.geojson",
-        "loaded": False,
-        "rtree": rtree.index.Index(),
-        "idmap": {}
+        "loaded": False
+        # "kdtree": scipy.cKDTree()
+        # "dataframe": GeoDataFrame()
+        # "npArray": np.array()
         }
 }
 
 # datasets is dictionary of the selected datasets from the frontend: {"earthquakes": 1, "volcanos": 0, "ufos": 0}
 def process_datasets(datasets):
     global dataset_map
-    searchable_datasets = []
+    # iterate through each dataset checked-boxed in the front end, load the data
+    #   from the dataset geojson file, create a KD tree from the data
     for dataset in datasets:
+        # if the dataset checkbox was checked (i.e. the dataset key has a value of 1),
+        #   check `dataset_map` if the data has been loaded already. If not, load it
         if datasets[dataset]:
             if not dataset_map[dataset]["loaded"]:
-                loaded_dataset_with_properties = load_data_into_Rtree(dataset_map[dataset]["path"])
+                # create a KD tree with the data and store it and the 
+                loaded_dataset_with_properties = load_data_into_KDtree(dataset_map[dataset]["path"])
                 dataset_map[dataset]["loaded"] = True
-                dataset_map[dataset]["rtree"] = loaded_dataset_with_properties[0]
-                dataset_map[dataset]["idmap"] = loaded_dataset_with_properties[1]
-            else:
-                loaded_dataset_with_properties = (dataset_map[dataset]["rtree"], dataset_map[dataset]["idmap"])
-            searchable_datasets.append(loaded_dataset_with_properties)
-    return searchable_datasets
+                dataset_map[dataset]["kdtree"] = loaded_dataset_with_properties[0]
+                dataset_map[dataset]["dataframe"] = loaded_dataset_with_properties[1]
+                dataset_map[dataset]["npArray"] = loaded_dataset_with_properties[2]
     
-def load_data_into_Rtree(path_to_dataset):
-    data = str
+def load_data_into_KDtree(path_to_dataset):
+    data = ''
     if path.isfile(path_to_dataset):
         with open(path_to_dataset, 'r') as f:
             data = f.read()
     else:
-        print("Incorrect path to dataset. Check DATASET_MAP.")
+        print("Incorrect path to dataset. Check DATASET_MAP and see if the path is correct.")
     dataset = loads(data)
-
-    # an rtree that can hold a geometric data structure, like a rectangle or a point,
-    #       and an id (which does not have to be unique, but we will make it so). 
-    dataset_rtree = rtree.index.Index()
-    # since we can't store any more data in the rtree's nodes, we will keep a dictionary
-    #       to map the rtree node id's and the id's of the earthquake (in the .json file
-    #       we loaded back in `get_earthquakes`)
-    rtreeID_to_id = {}
-    # the unique id for each node in the R-tree
-    id = 0
-    for document in dataset["features"]:
-        # for every document in the dataset's dictionary, if the coord is
-        #       a point, load it into the rtree
-        if document["type"] == "Feature" and document["geometry"]["type"] == "Point":
-            # 2D coordinates must be loaded into the R-tree as `(topleft_x, topleft_y, bottomright_x, bottomright_y)`
-            #       For a point, that's just (x, y, x, y)
-            dataset_coord = (document["geometry"]["coordinates"][0], document["geometry"]["coordinates"][1], \
-                                document["geometry"]["coordinates"][0], document["geometry"]["coordinates"][1])
-            dataset_rtree.insert(id, dataset_coord)
-            # map the R-tree id with the actual json data file document
-            rtreeID_to_id[id] = document
-            id += 1
-    return (dataset_rtree, rtreeID_to_id)
+    # creates a geopandas dataframe with the data
+    datasetDF = geopandas.GeoDataFrame.from_features(dataset, crs="EPSG:4326")
+    # since cKDTree needs an array-like object to query nearest neighbors, we create
+    #   such an array
+    datasetNP = np.array(list(datasetDF.geometry.apply(lambda x: (x.x, x.y))))
+    # populate the KD tree
+    datasetKD = cKDTree(datasetNP)
+    return (datasetKD, datasetDF, datasetNP)
 
 # call process_datasets --> [(datasetRtree1, Rtree2DatasetMap1),(datasetRtree2, Rtree2DatasetMap2),(datasetRtree3, Rtree2DatasetMap3)]
 # query rtree --> [id1, id2, id3]
@@ -247,63 +182,54 @@ def load_data_into_Rtree(path_to_dataset):
 # append all results to feature collection -> {geojson feature collection}
 # send to frontend -> {query number, feature collection}
 
-queryNum = -1
-
-NN_featurecollection = {
-        'type': 'FeatureCollection',
-        'features': []
-        }
-
 @app.route('/nnQuery/')
 def nnQuery():
-    global queryNum, NN_featurecollection
-    queryNum += 1
+    full_results = []
     # queryDict = {"datasets":{}, "geojson":{}, "queryType":{}}
     queryDict = json.loads(request.args.get("NNparams"))
-    # searchable_datasets = [(datasetRtree1, Rtree2DatasetMap1),(datasetRtree2, Rtree2DatasetMap2),(datasetRtree3, Rtree2DatasetMap3)]
-    searchable_datasets = process_datasets(queryDict["datasets"])
-    lng = queryDict["geojson"]["geometry"]["coordinates"][0]
-    lat = queryDict["geojson"]["geometry"]["coordinates"][1]
+    process_datasets(queryDict["datasets"])
+    lng, lat = queryDict["geojson"]["geometry"]["coordinates"][0], queryDict["geojson"]["geometry"]["coordinates"][1]
     if queryDict["queryType"]["name"] == "nearestN":
-        # iterating through a list of tuples
-        for dataset in searchable_datasets:
-            nearest = list(dataset[0].nearest((float(lng),float(lat),float(lng),float(lat)),int(queryDict["queryType"]["value"])))
-            # loop through all five nearest points and append them to `all_nearest_neighbors`
-            for coordID in nearest:
-                # since the format of the json data is not GeoJSON (it has an 'id' field), 
-                #       we create a GeoJSON-friendly dict and append it to `all_nearest_neighbors`
-                #       Remember, `dataset[1]` is `rtreeID_to_id` which maps the rtree id to the geojson document
-                #       from the original .geojson file
-                NN_featurecollection['features'].append({
-                        'type': 'Feature',
-                        'geometry': dataset[1][coordID]['geometry'],
-                        'properties': dataset[1][coordID]['properties']
-                    })
-    return jsonify(str(queryNum), NN_featurecollection)
+        # iterating through the dataset dictionary
+        for dataset in dataset_map:
+            # this if statement only allows data from the datasets checked in the frontend to be queried
+            #   Otherwise, all the datasets here in the backend would be queried, loaded or not. This also
+            #   prevents datasets that are loaded but weren't checked in the frontend from being queried
+            if queryDict['datasets'][dataset]:
+                # returns the numpy array indices of the nearest neighbors of `[lng, lat]`, nearest to farthest
+                _, indices = dataset_map[dataset]['kdtree'].query([lng, lat], k=int(queryDict["queryType"]["value"]))
+                # a dataframe ONLY OF the nearest neighbors (each nearest neighbor has the properties data
+                #   from the dataset input file). The dataframe is then converted to a JSON string, which is
+                #   then parsed into a python dict
+                full_results += json.loads((dataset_map[dataset]['dataframe'].iloc[indices]).to_json())['features']
+    else:
+        # iterating through the dataset dictionary
+        for dataset in dataset_map:
+            # this if statement only allows data from the datasets checked in the frontend to be queried
+            #   Otherwise, all the datasets here in the backend would be queried, loaded or not. This also
+            #   prevents datasets that are loaded but weren't checked in the frontend from being queried
+            if queryDict['datasets'][dataset]:
+                # returns the numpy array indices of the nearest neighbors of `[lng, lat]`, nearest to farthest
+                indices = dataset_map[dataset]['kdtree'].query_ball_point([lng, lat], r=int(queryDict["queryType"]["value"]))
+                # a dataframe ONLY OF the nearest neighbors (each nearest neighbor has the properties data
+                #   from the dataset input file). The dataframe is then converted to a JSON string, which is
+                #   then parsed into a python dict
+                full_results += json.loads((dataset_map[dataset]['dataframe'].iloc[indices]).to_json())['features']
+    return jsonify(full_results)
 
-@app.route('/deleteNNCoord/')
-def deleteNNCoord():
-    """
-    Purpose:    Remove all features from the `results_featurecollection` geojson object
-                    This is called whenever the frontend erases all spots/layers from
-                    map.
-    Input:      None
-    Output:     A dictionary with a key equal to the number of coords the frontend
-                    will delete from the map and a value equal to a list of the
-                    feature objects the frontend will delete (these feature objects 
-                    are properly formatted geojson features)
-    """
-    global queryNum, NN_featurecollection
-    # reset source's value so the next coord to be added to the map will have a source
-    #   value of zero
-    number_of_queries_to_delete = queryNum + 1
-    queryNum = -1
-    # save the list of features to be erased to a temp variable.
-    #   Then set the 'features' list to be empty
-    json_coords_to_be_deleted = NN_featurecollection['features']
-    NN_featurecollection['features'] = []
-
-    return str(number_of_queries_to_delete)
+"""
+  /$$$$$$  /$$   /$$                     /$$$$$$$  /$$             /$$                                            
+ /$$__  $$|__/  | $$                    | $$__  $$|__/            | $$                                            
+| $$  \__/ /$$ /$$$$$$   /$$   /$$      | $$  \ $$ /$$  /$$$$$$$ /$$$$$$    /$$$$$$  /$$$$$$$   /$$$$$$$  /$$$$$$ 
+| $$      | $$|_  $$_/  | $$  | $$      | $$  | $$| $$ /$$_____/|_  $$_/   |____  $$| $$__  $$ /$$_____/ /$$__  $$
+| $$      | $$  | $$    | $$  | $$      | $$  | $$| $$|  $$$$$$   | $$      /$$$$$$$| $$  \ $$| $$      | $$$$$$$$
+| $$    $$| $$  | $$ /$$| $$  | $$      | $$  | $$| $$ \____  $$  | $$ /$$ /$$__  $$| $$  | $$| $$      | $$_____/
+|  $$$$$$/| $$  |  $$$$/|  $$$$$$$      | $$$$$$$/| $$ /$$$$$$$/  |  $$$$/|  $$$$$$$| $$  | $$|  $$$$$$$|  $$$$$$$
+ \______/ |__/   \___/   \____  $$      |_______/ |__/|_______/    \___/   \_______/|__/  |__/ \_______/ \_______/
+                         /$$  | $$                                                                                
+                        |  $$$$$$/                                                                                
+                         \______/                                                                                 
+"""
 
 distance_map = {
     "cities": {
@@ -313,14 +239,15 @@ distance_map = {
     }
 }
 
-added_cities = []
-
 def load_cities():
     global distance_map
+    # creates a dict mapping cities to a key equal to the first character in their name
     city_letter_map = {}
     data = json.loads(open(distance_map["cities"]["path"], 'r').read())
     for document in data["features"]:
         first_letter_of_name = document["properties"]["name"][0]
+        # if the first character of that city has not been added to the map
+        #   add it
         if first_letter_of_name not in city_letter_map:
             city_letter_map[first_letter_of_name] = []
         city_letter_map[first_letter_of_name].append(document)
@@ -335,7 +262,6 @@ def cities():
     #   start with 'W'. Then they type the 'i', which calls this function with `city_prompt`
     #   now "Wi", grabbing all the cities that start with 'Wi'. Rinse and repeat.
     city_prompt = unquote(request.args.get("hint")).title()
-    print(city_prompt)
     # search cities.geojson for all cities that begin with the string `city_prompt`.
     #   Then return those cities as a list. After the user has clicked on the city they want, 
     #   we query the cities.geojson again to grab the coordinates of the city and draw it on
@@ -343,112 +269,155 @@ def cities():
     if not distance_map["cities"]["loaded"]:
         load_cities()
     search_results = []
-    # `distance_map["cities"]["map"][city_prompt[0]]` is the first letter of the `city_prompt` argument
+    # `distance_map["cities"]["map"][city_prompt[0]]` is the first character of the `city_prompt` argument
+    # The `if (city_prompt)` prevents all cities being returned as suggestions if the user
+    #   deleted their prompt by pressing backspace. The second part of the if statement
+    #   prevents any characters other than english letters found on a QWERTY keyboard from
+    #   returning suggestions
     if (city_prompt) and (city_prompt[0] in distance_map["cities"]["map"]):
         for city_document in distance_map["cities"]["map"][city_prompt[0]]:
             if city_prompt in city_document["properties"]["name"]:
+                # append any suggestions that contain the prompt to the search results list
                 search_results.append(city_document["properties"]["name"])
+    # of course, if there are no suggestions, let the user know
     if search_results == []:
         search_results.append("No results")
     return jsonify(search_results)
 
 @app.route('/cityDist/')
 def cityDist():
-    global added_cities
     citySource, cityDest = request.args.get("cityArgs",None).split(',')
     citySource = (unquote(citySource)).title()
     cityDest = (unquote(cityDest)).title()
-    cityDist_FeatureCollection = {
-        "type": "FeatureCollection",
-        "features": []
-    }
+    cityDist_Features = []
+    # only run if both source and destination cities are populated with text
     if citySource and cityDest:
-        both_city_coords = []
+
+        # find the cities and append the JSON object to the features list
+        #   to send back to the front end
         for city_document in distance_map["cities"]["map"][citySource[0]]:
             if city_document["properties"]["name"] == citySource:
-                added_cities.append(city_document["properties"]["source"])
-                cityDist_FeatureCollection["features"].append(city_document)
-                both_city_coords.append(city_document["geometry"]["coordinates"])
+                cityDist_Features.append(city_document)
                 break
         for city_document in distance_map["cities"]["map"][cityDest[0]]:
             if city_document["properties"]["name"] == cityDest:
-                added_cities.append(city_document["properties"]["source"])
-                cityDist_FeatureCollection["features"].append(city_document)
-                both_city_coords.append(city_document["geometry"]["coordinates"])
+                cityDist_Features.append(city_document)
                 break
-        cityDist_FeatureCollection["features"].append( {
-                "type": "Feature",
-                "geometry": {
-                    "type": "LineString",
-                    "coordinates": both_city_coords
-                },
-                "properties": {
-                    "draw_type": "line",
-                    "source": citySource+cityDest
-                }
+        cityDist_Features.append({
+            'type': "feature",
+            'properties': {},
+            'geometry': {
+                'type': "LineString",
+                "coordinates": [
+                    cityDist_Features[0]['geometry']['coordinates'],
+                    cityDist_Features[1]['geometry']['coordinates']
+                ]
             }
-        )
-        added_cities.append(citySource+cityDest)
-    return jsonify(cityDist_FeatureCollection)
+        })
+    return jsonify(cityDist_Features)
 
-@app.route('/deleteCities/')
-def deleteCities():
-    global added_cities
-    added_cities = []
-    return jsonify(added_cities)
+"""
+ /$$$$$$$  /$$$$$$$                             /$$$$$$                                         
+| $$__  $$| $$__  $$                           /$$__  $$                                        
+| $$  \ $$| $$  \ $$  /$$$$$$  /$$   /$$      | $$  \ $$ /$$   /$$  /$$$$$$   /$$$$$$  /$$   /$$
+| $$$$$$$ | $$$$$$$  /$$__  $$|  $$ /$$/      | $$  | $$| $$  | $$ /$$__  $$ /$$__  $$| $$  | $$
+| $$__  $$| $$__  $$| $$  \ $$ \  $$$$/       | $$  | $$| $$  | $$| $$$$$$$$| $$  \__/| $$  | $$
+| $$  \ $$| $$  \ $$| $$  | $$  >$$  $$       | $$/$$ $$| $$  | $$| $$_____/| $$      | $$  | $$
+| $$$$$$$/| $$$$$$$/|  $$$$$$/ /$$/\  $$      |  $$$$$$/|  $$$$$$/|  $$$$$$$| $$      |  $$$$$$$
+|_______/ |_______/  \______/ |__/  \__/       \____ $$$ \______/  \_______/|__/       \____  $$
+                                                    \__/                               /$$  | $$
+                                                                                      |  $$$$$$/
+                                                                                       \______/ 
+"""
 
-######################################################################################
-
-@app.route('/boundingBoxQuery/')
-def boundingBoxQuery():
-    coord_results = []
-    feature_results = []
-    BBparams = json.loads(request.args.get("BBparams", None))
-    # searchable_datasets = [(datasetRtree1, Rtree2DatasetMap1),(datasetRtree2, Rtree2DatasetMap2),(datasetRtree3, Rtree2DatasetMap3)]
+def queryBBoxIntersection(BBparams):
     top, left, bottom, right = \
         float(BBparams["bbox"][0].split(',')[0]), \
         float(BBparams["bbox"][0].split(',')[1]), \
         float(BBparams["bbox"][1].split(',')[0]), \
         float(BBparams["bbox"][1].split(',')[1])
-    searchable_datasets = process_datasets(BBparams["datasets"])
-    # print(searchable_datasets[0][0])
-    # print(right, top, left, bottom)
-    for dataset in searchable_datasets:
-        coord_results = list(dataset[0].intersection((right, top, left, bottom)))
-        # print(coord_results)
-        for coordID in coord_results:
-            # since the format of the json data is not GeoJSON (it has an 'id' field), 
-            #       we create a GeoJSON-friendly dict and append it to `all_nearest_neighbors`
-            #       Remember, `dataset[1]` is `rtreeID_to_id` which maps the rtree id to the geojson document
-            #       from the original .geojson file
-            feature_results.append({
-                    'type': 'Feature',
-                    'geometry': dataset[1][coordID]['geometry'],
-                    'properties': dataset[1][coordID]['properties']
-                })
-    return jsonify(feature_results)
+    bbox = {
+    'type':"FeatureCollection",
+    "features": [{
+        "type": "Feature",
+        "properties": {
+            "name": "United States"
+        },
+        "geometry": {
+            "type": "Polygon",
+            "coordinates": [
+                [
+                    [top, left],
+                    [top, right],
+                    [bottom, right],
+                    [bottom, left],
+                    [top, left]
+                ]
+            ]
+        }
+    }]
+    }
+    # load the bounding box that loosely bounds the US, where (x=lon, y=lat)
+    bbox_df = geopandas.GeoDataFrame.from_features(bbox, crs="EPSG:4326")
+    process_datasets(BBparams["datasets"])
+    full_results = []
+    # iterating through the dataset dictionary
+    for dataset in BBparams['datasets']:
+        # this if statement only allows data from the datasets checked in the frontend to be queried
+        #   Otherwise, all the datasets here in the backend would be queried, loaded or not. This also
+        #   prevents datasets that are loaded but weren't checked in the frontend from being queried
+        if BBparams['datasets'][dataset]:
+            # queries the volcanos dataframe for all points in bbox_df's bounding box
+            points_in_bbox, _ = bbox_df.sindex.query_bulk(dataset_map[dataset]["dataframe"].geometry, predicate='intersects')
+            # create a dataframe of all the intersecting points in volcanos dataframe
+            matches = dataset_map[dataset]["dataframe"].iloc[points_in_bbox]
+            full_results += json.loads(matches.to_json())['features']
+    return full_results, bbox['features']
 
-######################################################################################
+@app.route('/boundingBoxQuery/')
+def boundingBoxQuery():
+    BBparams = json.loads(request.args.get("BBparams", None))
+    return jsonify(queryBBoxIntersection(BBparams))
 
-railroads = {
-    "path": "./Assignments/A04/assets/api/data/us_railroads.geojson",
-    "loaded": False,
-    "map": {}
-}
+def createPolygonFromPoints(features):
+    polygon = {
+        'type':'Feature',
+        'properties': {},
+        'geometry': {
+            'type': 'Polygon',
+            'coordinates': [
+                []
+            ]
+        }
+    }
+    for feature in features:
+        polygon['geometry']['coordinates'][0].append(feature['geometry']['coordinates'])
+    return polygon
 
-def load_railroads():
-    # when reading a file into a geopandas data structure, the lat/lon needs to
-    #   be ordered as `coordinate: [lat, lon]` and not `coordinate: [lon, lat]`
-    #   This is the opposite how mapbox does things, so keeping the ordering
-    #   straight will be tasking.
-    pass
+@app.route("/convexQuery/")
+def convexQuery():
+    """
+    Purpose:    Return the smallest polygon that contains a set of points
+    Input:      `BBparams`: a JSON
+    """
+    convexFC = {
+        'type': "FeatureCollection",
+        'features': []
+    }
 
-@app.route('/findrailroads/')
-def findrailroads():
-    global railroads
-    # load the railroads data if it hasn't been already
-    if not railroads["loaded"]:
-        load_railroads()
+    BBparams = json.loads(request.args.get("BBparams", None))
+    intersections, _ = queryBBoxIntersection(BBparams)
+    convexFC['features'] = [createPolygonFromPoints(intersections)]
+    convexParams = geopandas.GeoDataFrame.from_features(convexFC, crs="EPSG:4326")
+    # create a geoseries of points that form the smallest convex Polygon
+    #   "The convex hull of a geometry is the smallest convex Polygon containing 
+    #   all the points in each geometry, unless the number of points in the geometric 
+    #   object is less than three. For two points, the convex hull collapses to a 
+    #   LineString; for 1, a Point. 
+    #       - https://geopandas.readthedocs.io/en/latest/docs/reference/api/geopandas.GeoSeries.convex_hull.html
+    convex_full_results = json.loads((convexParams.convex_hull).to_json())
+    # return a list of the convex hull and the intersecting points found within the bounding box
+    return jsonify(convex_full_results['features']+intersections)
 
 ######################################################################################
 

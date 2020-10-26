@@ -1,4 +1,4 @@
-mapboxgl.accessToken = 'pk.eyJ1IjoicnVnYnlwcm9mIiwiYSI6ImNpZ3M1aDZwbzAyMnF1c20xcnM4ZGowYWQifQ.s6ghscOu98he230FV1_72w';
+mapboxgl.accessToken = 'pk.eyJ1IjoicGlyaG9tZWdhIiwiYSI6ImNrMW1uMGhsMzAwMGszaW11OXZhempxMTMifQ.tQp7BareQGxwalQvIQvBsw';
 
 var map = new mapboxgl.Map({
     container: 'map',
@@ -122,89 +122,94 @@ map.on('load', function () {
 
 });
 
-//Enter Lat Long
-//Enter Lat Long
-//Enter Lat Long
+//Enter Lon Lat
+//Enter Lon Lat
+//Enter Lon Lat
 
 map.on('load', function () {
 
     $(document).ready(function () {
 
+        var displayCoordsFC = {
+            "type": "FeatureCollection",
+            "features": []
+        }
+
         // Purpose:     Adds a source and a layer to the map
         // Input:       a source ID and a geojson feature object
         // Output:      None
-        function loadSourceLayer(coordID, coordData) {
-            map.addSource(coordID, {
-                type: 'geojson',
-                data: coordData
-            });
+        function loadSourceLayer() {
+            if (!map.getSource("displayCoords")) {
+                map.addSource("displayCoords", {
+                    'type': 'geojson',
+                    'data': displayCoordsFC
+                });
+            } else {
+                map.getSource("displayCoords").setData(
+                    displayCoordsFC
+                )
+            }
 
-            map.addLayer({
-                id: coordID,
-                type: 'circle',
-                source: coordID,
-                layout: {},
-                paint: {
-                    "circle-color": 'red',
-                    "circle-radius": 8,
-                },
-            });
+            if (!map.getLayer("displayCoordsLayer")) {
+                map.addLayer({
+                    'id': "displayCoordsLayer",
+                    'type': 'circle',
+                    'source': "displayCoords",
+                    'layout': {},
+                    'paint': {
+                        "circle-color": 'red',
+                        "circle-radius": 8,
+                    }
+                })
+            }
         };
 
         // Purpose:     Removes a source ID and its associated layer from the map
         // Input:       None
         // Output:      None
         function clearSourceLayer() {
-            // this is a call to the backend. It will feed the frontend
-            //      a key-value pair where the key is an integer equal to
-            //      to the number of feature objects to erase from the map,
-            //      and the value is an array of all the feature objects to
-            //      be removed.
-            $.getJSON("http://localhost:8888/deleteCoord/")
-                .done(function (coordsJSON) {
-                    for (var i = 0; i < coordsJSON['0']; ++i) {
-                        map.removeLayer(coordsJSON['1'][i].properties.source);
-                        map.removeSource(coordsJSON['1'][i].properties.source);
-
-                        if (map.getLayer(coordsJSON['1'][i].properties.source)) {
-                            map.removeLayer(coordsJSON['1'][i].properties.source);
-                            map.removeSource(coordsJSON['1'][i].properties.source);
-                        }
-                    }
-                })
-        };
-
-        //clear
-        $('#findLLButtonClear').click(function () {
-            clearSourceLayer()
-            // adjusts the map view to be centered on lng=0,lat=0
-            map.flyTo({
-                center: [0, 0]
-            });
-        });
+            if (map.getLayer("displayCoordsLayer")) {
+                map.removeLayer("displayCoordsLayer");
+            }
+            if (map.getSource("displayCoords")) {
+                map.removeSource("displayCoords")
+            }
+        }
 
         //find
         $('#findLLButton').click(function () {
-            console.log("#findLLButton was pressed!")
             // grabs the number input from the lngInput-latInput fields
             var enterLng = +document.getElementById('lngInput').value
             var enterLat = +document.getElementById('latInput').value
 
-            // creates a geojson feature object with the lng and lat values
-            var enterLL = turf.point([enterLng, enterLat]);
             // makes a call to the backend to save the feature object in a
             //      feature collection
             $.getJSON("http://localhost:8888/saveCoord/?lngLat=" + [enterLng, enterLat])
-                .done(function (coord) {
+                .done(function (coordFeature) {
                     // display the coordinate on the map
-                    var coordID = coord.toString()
-                    loadSourceLayer(coordID, enterLL)
+                    displayCoordsFC.features = coordFeature
+                    loadSourceLayer()
+                    $('#lngInput').val('')
+                    $('#latInput').val('')
 
                     // center the view on the newly-added coordinate
                     map.flyTo({
                         center: [enterLng, enterLat]
                     });
                 });
+        });
+
+        //clear
+        $('#findLLButtonClear').click(function () {
+            displayCoordsFC.feature = []
+            clearSourceLayer()
+
+            $('#lngInput').val('')
+            $('#latInput').val('')
+            // adjusts the map view to be centered on lng=0,lat=0
+            map.flyTo({
+                center: [0, 0]
+            });
         });
 
         //save to JSON
@@ -221,22 +226,25 @@ map.on('load', function () {
 
         //load from JSON
         $('#loadJSONButton').click(function () {
-            clearSourceLayer()
             $.getJSON("http://localhost:8888/loadJSON/")
                 .done(function (json) {
-                    console.log(json)
-                    var centerLng = 0, centerLat = 0
-                    for (var i = 0; i < json['0']; ++i) {
-                        loadSourceLayer(json['1'][i].properties.source, json['1'][i])
-                        centerLng += json['1'][i].geometry.coordinates[0]
-                        centerLat += json['1'][i].geometry.coordinates[1]
-                    }
+                    displayCoordsFC.features = [...json, displayCoordsFC.features]
+                    loadSourceLayer()
 
                     // center the view on the centerpoint of all newly added coords
                     map.flyTo({
-                        center: [centerLng / json['0'], centerLat / json['0']]
+                        center: [0, 0]
                     });
+                })
+        })
 
+        //delete JSON
+        $('#deleteJSONButton').click(function () {
+            $.getJSON("http://localhost:8888/deleteJSON/")
+                .done(function (response) {
+                    if (parseInt(response)) {
+                        console.log("Deleted point history successfully!")
+                    }
                 })
         })
     });
@@ -250,9 +258,9 @@ map.on('load', function () {
 
     $(document).ready(function () {
 
-        var bbFeature = {}
+        // var bbFeature = {}
 
-        var resultsFeature_Collection = {
+        var bBoxFeature_Collection = {
             "type": "FeatureCollection",
             "features": []
         }
@@ -261,45 +269,17 @@ map.on('load', function () {
         // Input:       a source ID and a geojson feature object
         // Output:      None
         function loadSourceLayer() {
-            // console.log(bbFeature)
-            if (!map.getSource("bBoxes")) {
-                console.log("No bBoxes source. Making one.")
-                map.addSource("bBoxes", {
-                    'type': 'geojson',
-                    'data': bbFeature
-                });
-            } else {
-                map.getSource("bBoxes").setData(
-                    bbFeature
-                )
-            }
-
             if (!map.getSource("coordsBB")) {
-                console.log("No coordsBB source. Making one.")
                 map.addSource("coordsBB", {
                     'type': 'geojson',
-                    'data': resultsFeature_Collection
+                    'data': bBoxFeature_Collection
                 });
             } else {
                 map.getSource("coordsBB").setData(
-                    resultsFeature_Collection
+                    bBoxFeature_Collection
                 )
             }
-
-            if (!map.getLayer("bBoxOutline")) {
-                console.log("No bBoxOutline layer. Making one.")
-                map.addLayer({
-                    'id': "bBoxOutline",
-                    'type': 'fill',
-                    'source': "bBoxes",
-                    'paint': {
-                        'fill-color': "#888888",
-                        'fill-opacity': 0.4
-                    }
-                })
-            }
             if (!map.getLayer("bBoxContained")) {
-                console.log("No bBoxContained layer. Making one.")
                 map.addLayer({
                     'id': "bBoxContained",
                     'type': 'circle',
@@ -309,6 +289,21 @@ map.on('load', function () {
                         "circle-color": 'red',
                         "circle-radius": 8,
                     },
+                    'filter': ['==', '$type', 'Point']
+                })
+            }
+            if (!map.getLayer("bBoxOutline")) {
+                map.addLayer({
+                    'id': "bBoxOutline",
+                    'type': 'fill',
+                    'source': "coordsBB",
+                    'layout': {},
+                    'paint': {
+                        'fill-color': 'white',
+                        'fill-opacity': 0.4,
+                        'fill-outline-color': 'gray'
+                    },
+                    'filter': ['==', '$type', 'Polygon']
                 })
             }
         };
@@ -323,16 +318,8 @@ map.on('load', function () {
             if (map.getLayer("bBoxContained")) {
                 map.removeLayer("bBoxContained");
             }
-        }
-
-        function chooseDataset() {
-            return {
-                "datasets": {
-                    "earthquakes": document.getElementById("earthquakes").checked
-                    // "volcanos": document.getElementById("volcanos").checked,
-                    // "planes": document.getElementById("planes").checked,
-                    // "ufos": document.getElementById("ufos").checked
-                }
+            if (map.getSource("coordsBB")) {
+                map.removeSource("coordsBB");
             }
         };
 
@@ -346,60 +333,52 @@ map.on('load', function () {
             $('#bottomRightBB').val($('#pointBB').text())
         });
 
+        function chooseDataset() {
+            return {
+                "datasets": {
+                    "earthquakes": document.getElementById("earthquakes").checked,
+                    "volcanos": document.getElementById("volcanos").checked
+                    // "planes": document.getElementById("planes").checked,
+                    // "ufos": document.getElementById("ufos").checked
+                }
+            }
+        };
+
         //find
         $('#queryBBButton').click(function () {
             if ($('#topLeftBB').val() && $('#bottomRightBB').val()) {
                 let topLeft = $('#topLeftBB').val()
                 let bottomRight = $('#bottomRightBB').val()
+
                 let BBparams = $.extend({ "bbox": [topLeft, bottomRight] }, chooseDataset())
-                console.log(BBparams)
 
                 $.getJSON("http://localhost:8888/boundingBoxQuery/?BBparams=" + JSON.stringify(BBparams))
-                    .done(function (data) {
-                        console.log(data)
-                        resultsFeature_Collection.features = data
+                    .done(function (bboxAndResults) {
+                        bBoxFeature_Collection.features = [...bboxAndResults[0], bboxAndResults[1]]
                         loadSourceLayer()
                     })
             }
         });
 
-        //visualize
-        $('#queryBBButtonViz').click(function () {
+        //convex find
+        $('#convBBButton').click(function () {
             if ($('#topLeftBB').val() && $('#bottomRightBB').val()) {
-                let topLeft = $.map($('#topLeftBB').val().split(','), function (value) {
-                    return parseFloat(value, 10)
-                });
-                let bottomRight = $.map($('#bottomRightBB').val().split(','), function (value) {
-                    return parseFloat(value, 10)
-                });
-                let topRight = [bottomRight[0], topLeft[1]]
-                let bottomLeft = [topLeft[0], bottomRight[1]]
-                // console.log(topLeft, bottomRight)
-                bbFeature = {
-                    "type": "Feature",
-                    "properties": {},
-                    "geometry": {
-                        "type": "Polygon",
-                        "coordinates": [
-                            [
-                                topLeft,
-                                topRight,
-                                bottomRight,
-                                bottomLeft,
-                                topLeft
-                            ]
-                        ]
-                    }
-                }
-                clearSourceLayer()
-                loadSourceLayer()
+                let topLeft = $('#topLeftBB').val()
+                let bottomRight = $('#bottomRightBB').val()
+
+                let BBparams = $.extend({ "bbox": [topLeft, bottomRight] }, chooseDataset())
+
+                $.getJSON("http://localhost:8888/convexQuery/?BBparams=" + JSON.stringify(BBparams))
+                    .done(function (convexHull) {
+                        bBoxFeature_Collection.features = convexHull
+                        loadSourceLayer()
+                    })
             }
-        })
+        });
 
         //clear
         $('#queryBBButtonClear').click(function () {
-            bbFeature = {}
-            resultsFeature_Collection.features = []
+            bBoxFeature_Collection.features = []
             clearSourceLayer()
             $('#topLeftBB').val('')
             $('#bottomRightBB').val('')
@@ -423,58 +402,57 @@ map.on('load', function () {
 
     $(document).ready(function () {
 
+        var nearestNeighborsFC = {
+            "type": "FeatureCollection",
+            "features": []
+        }
+
         // Purpose:     Adds a source and a layer to the map
         // Input:       a source ID and a geojson feature object
         // Output:      None
-        function loadSourceLayer(coordID, coordData) {
-            map.addSource("NN" + coordID, {
-                type: 'geojson',
-                data: coordData
-            });
+        function loadSourceLayer() {
+            if (!map.getSource("nnCoords")) {
+                map.addSource("nnCoords", {
+                    'type': 'geojson',
+                    'data': nearestNeighborsFC
+                });
+            } else {
+                map.getSource("nnCoords").setData(
+                    nearestNeighborsFC
+                )
+            }
 
-            map.addLayer({
-                id: "NN" + coordID,
-                type: 'circle',
-                source: "NN" + coordID,
-                layout: {},
-                paint: {
-                    "circle-color": 'red',
-                    "circle-radius": 8,
-                },
-            });
+            if (!map.getLayer("nnCoordsLayer")) {
+                map.addLayer({
+                    'id': "nnCoordsLayer",
+                    'type': 'circle',
+                    'source': "nnCoords",
+                    'layout': {},
+                    'paint': {
+                        "circle-color": 'blue',
+                        "circle-radius": 8,
+                    }
+                })
+            }
         };
 
         // Purpose:     Removes a source ID and its associated layer from the map
         // Input:       None
         // Output:      None
         function clearSourceLayer() {
-            // this is a call to the backend. It will feed the frontend
-            //      a key-value pair where the key is an integer equal to
-            //      to the number of feature objects to erase from the map,
-            //      and the value is an array of all the feature objects to
-            //      be removed.
-            $.getJSON("http://localhost:8888/deleteNNCoord/")
-                .done(function (num_queries_to_delete) {
-                    var numQueriesInt = parseInt(num_queries_to_delete)
-                    for (var i = 0; i < numQueriesInt; ++i) {
-                        var queryNum = i.toString()
-                        console.log("Deleting ", queryNum)
-                        map.removeLayer("NN" + queryNum);
-                        map.removeSource("NN" + queryNum);
-
-                        if (map.getLayer("NN" + queryNum)) {
-                            map.removeLayer("NN" + queryNum);
-                            map.removeSource("NN" + queryNum);
-                        }
-                    }
-                })
-        };
+            if (map.getLayer("nnCoordsLayer")) {
+                map.removeLayer("nnCoordsLayer");
+            }
+            if (map.getSource("nnCoords")) {
+                map.removeSource("nnCoords")
+            }
+        }
 
         function chooseDataset() {
             return {
                 "datasets": {
-                    "earthquakes": document.getElementById("earthquakes").checked
-                    // "volcanos": document.getElementById("volcanos").checked,
+                    "earthquakes": document.getElementById("earthquakes").checked,
+                    "volcanos": document.getElementById("volcanos").checked,
                     // "planes": document.getElementById("planes").checked,
                     // "ufos": document.getElementById("ufos").checked
                 }
@@ -514,9 +492,9 @@ map.on('load', function () {
             // makes a call to the backend to save the feature object in a
             //      feature collection
             $.getJSON("http://localhost:8888/nnQuery/?NNparams=" + JSON.stringify(NNparams))
-                .done(function (json) {
-                    console.log(json);
-                    loadSourceLayer(json[0], json[1])
+                .done(function (nnFeatures) {
+                    nearestNeighborsFC.features = nnFeatures
+                    loadSourceLayer()
                     map.flyTo({
                         center: [enterLng, enterLat]
                     });
@@ -543,23 +521,52 @@ map.on('load', function () {
 
     $(document).ready(function () {
 
+        var cityDistFC = {
+            "type": "FeatureCollection",
+            "features": []
+        }
+
         // Purpose:     Adds a source and a layer to the map
         // Input:       a source ID and a geojson feature object
         // Output:      None
-        function loadSourceLayer(coordData) {
-            if (!map.getSource(coordData.properties.source)) {
-                map.addSource(coordData.properties.source, {
-                    type: 'geojson',
-                    data: coordData
+        function loadSourceLayer() {
+            if (!map.getSource("cityDistCoords")) {
+                map.addSource("cityDistCoords", {
+                    'type': 'geojson',
+                    'data': cityDistFC
                 });
+            } else {
+                map.getSource("cityDistCoords").setData(
+                    cityDistFC
+                )
+            }
 
+            if (!map.getLayer("cityDistCoordsLayer")) {
                 map.addLayer({
-                    id: coordData.properties.source,
-                    type: coordData.properties.draw_type,
-                    source: coordData.properties.source,
-                    layout: {},
-                    paint: {},
-                });
+                    'id': "cityDistLineLayer",
+                    'type': 'line',
+                    'source': "cityDistCoords",
+                    'layout': {
+                        'line-join': 'round',
+                        'line-cap': 'round'
+                    },
+                    'paint': {
+                        "line-color": 'black',
+                        "line-width": 3,
+                    },
+                    'filter': ['==', '$type', 'LineString']
+                })
+                map.addLayer({
+                    'id': "cityDistCoordsLayer",
+                    'type': 'circle',
+                    'source': "cityDistCoords",
+                    'layout': {},
+                    'paint': {
+                        "circle-color": 'green',
+                        "circle-radius": 8,
+                    },
+                    'filter': ['==', '$type', 'Point']
+                })
             }
         };
 
@@ -567,89 +574,29 @@ map.on('load', function () {
         // Input:       None
         // Output:      None
         function clearSourceLayer() {
-            // this is a call to the backend. It will feed the frontend
-            //      a key-value pair where the key is an integer equal to
-            //      to the number of feature objects to erase from the map,
-            //      and the value is an array of all the feature objects to
-            //      be removed.
-            $.getJSON("http://localhost:8888/deleteCities/", function (data) {
-                for (var i = 0; i < data.length; ++i) {
-                    if (map.getLayer(data[i])) {
-                        map.removeLayer(data[i]);
-                        map.removeSource(data[i]);
-                    }
-                }
-            })
-        };
-
-        function populateCitiesSelect(whichSelect, whichinput) {
-            let cityname = $(whichinput).val()
-            let html = ''
-            $.get("http://localhost:8888/cities/?hint=" + cityname, function (data) {
-                for (var i = 0; i < data.length; ++i) {
-                    // fix data[i]
-                    html += '<option>' + data[i] + '</option>'
-                }
-                // modify the select
-                $(whichSelect).attr("size", data.length)
-                $(whichSelect).html(html)
-            })
+            if (map.getLayer("cityDistCoordsLayer")) {
+                map.removeLayer("cityDistCoordsLayer");
+            }
+            if (map.getLayer("cityDistLineLayer")) {
+                map.removeLayer("cityDistLineLayer");
+            }
+            if (map.getSource("cityDistCoords")) {
+                map.removeSource("cityDistCoords")
+            }
         }
-
-        function emptySelectOptions(whichSelect) {
-            // modify the select
-            $(whichSelect).attr("size", "0")
-            $(whichSelect).html('<option></option>')
-        }
-
-        // suggest cities when typing in the first text box
-        $("#inputCitiesSource").keyup(function (event) {
-            if ((event.which > 64 && event.which < 91) || event.which == 32 || event.which == 8)
-                populateCitiesSelect("#citySelectSource", "#inputCitiesSource")
-        });
-
-        // autofills the city boxes when one of the selector options is clicked
-        $("#citySelectSource")
-            .change(function () {
-                var str = ""
-                $("#citySelectSource option:selected").each(function () {
-                    str = $(this).text()
-                });
-                $("#inputCitiesSource").val(str);
-                emptySelectOptions("#citySelectSource")
-            })
-            .trigger("change");
-
-        // suggest cities when typing in the second text box
-        $("#inputCitiesDest").keyup(function (event) {
-            if ((event.which > 64 && event.which < 91) || event.which == 32 || event.which == 8)
-                populateCitiesSelect("#citySelectDest", "#inputCitiesDest")
-        });
-
-        // autofills the city boxes when one of the selector options is clicked
-        $("#citySelectDest").change(function () {
-            var str = ""
-            $("#citySelectDest option:selected").each(function () {
-                str = $(this).text()
-            });
-            $("#inputCitiesDest").val(str);
-            emptySelectOptions("#citySelectDest")
-        })
-            .trigger("change");
 
         $('#cityDist').click(function () {
             let citynameSource = $('#inputCitiesSource').val()
             let citynameDest = $('#inputCitiesDest').val()
-            $.get("http://localhost:8888/cityDist/?cityArgs=" + [citynameSource, citynameDest], function (data) {
-                for (var i = 0; i < 3; ++i) {
-                    loadSourceLayer(data.features[i])
-                }
-                length = turf.distance(data.features[0].geometry.coordinates, data.features[1].geometry.coordinates, 'miles');
+            $.get("http://localhost:8888/cityDist/?cityArgs=" + [citynameSource, citynameDest], function (cityDistJSON) {
+                cityDistFC.features = cityDistJSON
+                loadSourceLayer()
+                // calculate the distance between the two cities in miles
+                length = turf.distance(cityDistJSON[0].geometry.coordinates, cityDistJSON[1].geometry.coordinates, 'miles');
                 // restrict  to 2 decimal points
                 rounded_distance = Math.round(length * 100) / 100;
                 lineAnswer = document.getElementById('calculated-distance');
                 lineAnswer.innerHTML = '<p>' + rounded_distance + ' mi</p>';
-
             });
 
         });
@@ -658,9 +605,70 @@ map.on('load', function () {
             $('#calculated-distance p').remove();
             clearSourceLayer()
         });
+
+        /***********************************************************************************/
+
+        function populateCitiesSelect(whichSelect, whichinput) {
+            let cityname = $(whichinput).val()
+            let html = ''
+            $.get("http://localhost:8888/cities/?hint=" + cityname, function (data) {
+                for (var i = 0; i < data.length; ++i) {
+                    html += '<option>' + data[i] + '</option>'
+                }
+                // modify the select
+                $(whichSelect).attr("size", data.length)
+                $(whichSelect).html(html)
+            })
+        };
+
+        // suggest cities when typing in the first text box
+        $("#inputCitiesSource").keyup(function (event) {
+            if ((event.which > 64 && event.which < 91) || event.which == 32 || event.which == 8)
+                populateCitiesSelect("#citySelectSource", "#inputCitiesSource")
+        });
+
+        // suggest cities when typing in the second text box
+        $("#inputCitiesDest").keyup(function (event) {
+            if ((event.which > 64 && event.which < 91) || event.which == 32 || event.which == 8)
+                populateCitiesSelect("#citySelectDest", "#inputCitiesDest")
+        });
+
+        /***********************************************************************************/
+
+        function emptySelectOptions(whichSelect) {
+            // modify the select
+            $(whichSelect).attr("size", "0")
+            $(whichSelect).html('<option></option>')
+        };
+
+        // autofills the citySelectDest box when one of the selector options is clicked
+        $("#citySelectDest")
+            .change(function () {
+                var str = ""
+                $("#citySelectDest option:selected").each(function () {
+                    str = $(this).text()
+                });
+                $("#inputCitiesDest").val(str);
+                emptySelectOptions("#citySelectDest")
+            })
+            .trigger("change");
+
+        // autofills the citySelectSource box when one of the selector options is clicked
+        $("#citySelectSource")
+            .change(function () {
+                let str = ""
+                $("#citySelectSource option:selected").each(function () {
+                    str = $(this).text()
+                });
+                $("#inputCitiesSource").val(str);
+                emptySelectOptions("#citySelectSource")
+            })
+            .trigger("change");
+
+        /***********************************************************************************/
+
     });
 });
-
 
 //Upload GeoJSON
 //Upload GeoJSON
@@ -673,58 +681,95 @@ map.on('load', function () {
         // Purpose:     Adds a source and a layer to the map
         // Input:       a source ID and a geojson feature object
         // Output:      None
-        function loadSourceLayer(coordID, coordData) {
-            map.addSource(coordID, {
-                type: 'geojson',
-                data: coordData
-            });
-            // update this to change the layer type to whatever is in the geojson file
-            //  submitted on the frontend
-            map.addLayer({
-                id: coordID,
-                type: 'circle',
-                source: coordID,
-                layout: {},
-                paint: {
-                    "circle-color": 'red',
-                    "circle-radius": 8,
-                },
-            });
+        function loadSourceLayer(geoJSONFC) {
+            if (!map.getSource("geoJSONCoords")) {
+                map.addSource("geoJSONCoords", {
+                    'type': 'geojson',
+                    'data': geoJSONFC
+                });
+            } else {
+                map.getSource("geoJSONCoords").setData(
+                    geoJSONFC
+                )
+            }
+
+            if (!map.getLayer("geoJSONCoordsLayer")) {
+                map.addLayer({
+                    'id': "geoJSONPolyLayer",
+                    'type': 'fill',
+                    'source': "geoJSONCoords",
+                    'layout': {},
+                    'paint': {
+                        'fill-color': 'white',
+                        'fill-opacity': 0.4,
+                        'fill-outline-color': 'gray'
+                    },
+                    'filter': ['==', '$type', 'Polygon']
+                })
+                map.addLayer({
+                    'id': "geoJSONLineLayer",
+                    'type': 'line',
+                    'source': "geoJSONCoords",
+                    'layout': {
+                        'line-join': 'round',
+                        'line-cap': 'round'
+                    },
+                    'paint': {
+                        "line-color": 'black',
+                        "line-width": 3,
+                    },
+                    'filter': ['==', '$type', 'LineString']
+                })
+                map.addLayer({
+                    'id': "geoJSONPointLayer",
+                    'type': 'circle',
+                    'source': "geoJSONCoords",
+                    'layout': {},
+                    'paint': {
+                        "circle-color": 'yellow',
+                        "circle-radius": 8,
+                    },
+                    'filter': ['==', '$type', 'Point']
+                })
+            }
         };
 
         // Purpose:     Removes a source ID and its associated layer from the map
         // Input:       None
         // Output:      None
         function clearSourceLayer() {
-            // this is a call to the backend. It will feed the frontend
-            //      a key-value pair where the key is an integer equal to
-            //      to the number of feature objects to erase from the map,
-            //      and the value is an array of all the feature objects to
-            //      be removed.
-            if (map.getLayer("showGJ")) {
-                map.removeLayer("showGJ");
-                map.removeSource("showGJ");
+            if (map.getLayer("geoJSONMultiLayer")) {
+                map.removeLayer("geoJSONMultiLayer");
             }
-        };
+            if (map.getLayer("geoJSONPolyLayer")) {
+                map.removeLayer("geoJSONPolyLayer");
+            }
+            if (map.getLayer("geoJSONLineLayer")) {
+                map.removeLayer("geoJSONLineLayer");
+            }
+            if (map.getLayer("geoJSONPointLayer")) {
+                map.removeLayer("geoJSONPointLayer");
+            }
+            if (map.getSource("geoJSONCoords")) {
+                map.removeSource("geoJSONCoords")
+            }
+        }
 
-        //clear geojson
-        $('#clearGJ').click(function () {
-            console.log("clearGJ was pressed")
+        //display geojson
+        $('#submitGJ').click(function () {
+            // grabs the number input from the lngInput-latInput fields
+            var submitted_geojson = JSON.parse(document.getElementById('geoJSONTextBox').value)
             clearSourceLayer()
-            // adjusts the map view to be centered on lng=0,lat=0
+            loadSourceLayer(submitted_geojson)
             map.flyTo({
                 center: [0, 0]
             });
         });
 
-        //display geojson
-        $('#submitGJ').click(function () {
-            console.log("submitGJ was pressed")
-            // grabs the number input from the lngInput-latInput fields
-            var submitted_geojson = JSON.parse(document.getElementById('geoJSONTextBox').value)
-            // console.log(submitted_geojson)
+        //clear geojson
+        $('#clearGJ').click(function () {
             clearSourceLayer()
-            loadSourceLayer("showGJ", submitted_geojson)
+            // adjusts the map view to be centered on lng=0,lat=0
             map.flyTo({
                 center: [0, 0]
             });
