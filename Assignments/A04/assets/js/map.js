@@ -139,9 +139,7 @@ map.on('load', function () {
         // Input:       a source ID and a geojson feature object
         // Output:      None
         function loadSourceLayer() {
-            // console.log(bbFeature)
             if (!map.getSource("displayCoords")) {
-                console.log("No displayCoords source. Making one.")
                 map.addSource("displayCoords", {
                     'type': 'geojson',
                     'data': displayCoordsFC
@@ -153,7 +151,6 @@ map.on('load', function () {
             }
 
             if (!map.getLayer("displayCoordsLayer")) {
-                console.log("No displayCoordsLayer layer. Making one.")
                 map.addLayer({
                     'id': "displayCoordsLayer",
                     'type': 'circle',
@@ -181,7 +178,6 @@ map.on('load', function () {
 
         //find
         $('#findLLButton').click(function () {
-            console.log("#findLLButton was pressed!")
             // grabs the number input from the lngInput-latInput fields
             var enterLng = +document.getElementById('lngInput').value
             var enterLat = +document.getElementById('latInput').value
@@ -232,7 +228,6 @@ map.on('load', function () {
         $('#loadJSONButton').click(function () {
             $.getJSON("http://localhost:8888/loadJSON/")
                 .done(function (json) {
-                    console.log(json)
                     displayCoordsFC.features = [...json, displayCoordsFC.features]
                     loadSourceLayer()
 
@@ -275,7 +270,6 @@ map.on('load', function () {
         // Output:      None
         function loadSourceLayer() {
             if (!map.getSource("coordsBB")) {
-                console.log("No coordsBB source. Making one.")
                 map.addSource("coordsBB", {
                     'type': 'geojson',
                     'data': bBoxFeature_Collection
@@ -286,7 +280,6 @@ map.on('load', function () {
                 )
             }
             if (!map.getLayer("bBoxContained")) {
-                console.log("No bBoxContained layer. Making one.")
                 map.addLayer({
                     'id': "bBoxContained",
                     'type': 'circle',
@@ -344,7 +337,7 @@ map.on('load', function () {
             return {
                 "datasets": {
                     "earthquakes": document.getElementById("earthquakes").checked,
-                    // "volcanos": document.getElementById("volcanos").checked
+                    "volcanos": document.getElementById("volcanos").checked
                     // "planes": document.getElementById("planes").checked,
                     // "ufos": document.getElementById("ufos").checked
                 }
@@ -378,7 +371,6 @@ map.on('load', function () {
                 $.getJSON("http://localhost:8888/convexQuery/?BBparams=" + JSON.stringify(BBparams))
                     .done(function (convexHull) {
                         bBoxFeature_Collection.features = convexHull
-                        console.log(bBoxFeature_Collection)
                         loadSourceLayer()
                     })
             }
@@ -419,9 +411,7 @@ map.on('load', function () {
         // Input:       a source ID and a geojson feature object
         // Output:      None
         function loadSourceLayer() {
-            // console.log(bbFeature)
             if (!map.getSource("nnCoords")) {
-                console.log("No nnCoords source. Making one.")
                 map.addSource("nnCoords", {
                     'type': 'geojson',
                     'data': nearestNeighborsFC
@@ -433,7 +423,6 @@ map.on('load', function () {
             }
 
             if (!map.getLayer("nnCoordsLayer")) {
-                console.log("No nnCoordsLayer layer. Making one.")
                 map.addLayer({
                     'id': "nnCoordsLayer",
                     'type': 'circle',
@@ -490,7 +479,6 @@ map.on('load', function () {
         //find
         $('#queryNN').click(function () {
             var selectedDatasets = chooseDataset()
-            console.log(selectedDatasets)
             var selectQueryType = chooseQueryType()
 
             // grabs the number input from the lngInput-latInput fields
@@ -505,7 +493,6 @@ map.on('load', function () {
             //      feature collection
             $.getJSON("http://localhost:8888/nnQuery/?NNparams=" + JSON.stringify(NNparams))
                 .done(function (nnFeatures) {
-                    console.log(nnFeatures);
                     nearestNeighborsFC.features = nnFeatures
                     loadSourceLayer()
                     map.flyTo({
@@ -543,9 +530,7 @@ map.on('load', function () {
         // Input:       a source ID and a geojson feature object
         // Output:      None
         function loadSourceLayer() {
-            // console.log(bbFeature)
             if (!map.getSource("cityDistCoords")) {
-                console.log("No cityDistCoords source. Making one.")
                 map.addSource("cityDistCoords", {
                     'type': 'geojson',
                     'data': cityDistFC
@@ -557,7 +542,6 @@ map.on('load', function () {
             }
 
             if (!map.getLayer("cityDistCoordsLayer")) {
-                console.log("No cityDistCoordsLayer layer. Making one.")
                 map.addLayer({
                     'id': "cityDistLineLayer",
                     'type': 'line',
@@ -698,9 +682,7 @@ map.on('load', function () {
         // Input:       a source ID and a geojson feature object
         // Output:      None
         function loadSourceLayer(geoJSONFC) {
-            // console.log(bbFeature)
             if (!map.getSource("geoJSONCoords")) {
-                console.log("No geoJSONCoords source. Making one.")
                 map.addSource("geoJSONCoords", {
                     'type': 'geojson',
                     'data': geoJSONFC
@@ -712,7 +694,6 @@ map.on('load', function () {
             }
 
             if (!map.getLayer("geoJSONCoordsLayer")) {
-                console.log("No geoJSONCoordsLayer layer. Making one.")
                 map.addLayer({
                     'id': "geoJSONPolyLayer",
                     'type': 'fill',
@@ -776,10 +757,8 @@ map.on('load', function () {
 
         //display geojson
         $('#submitGJ').click(function () {
-            console.log("submitGJ was pressed")
             // grabs the number input from the lngInput-latInput fields
             var submitted_geojson = JSON.parse(document.getElementById('geoJSONTextBox').value)
-            // console.log(submitted_geojson)
             clearSourceLayer()
             loadSourceLayer(submitted_geojson)
             map.flyTo({
@@ -789,7 +768,6 @@ map.on('load', function () {
 
         //clear geojson
         $('#clearGJ').click(function () {
-            console.log("clearGJ was pressed")
             clearSourceLayer()
             // adjusts the map view to be centered on lng=0,lat=0
             map.flyTo({
