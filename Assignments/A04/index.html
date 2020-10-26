@@ -493,11 +493,12 @@
                         <hr>
                         <br />
 
-                        <!-- save points to json-->
-                        <p style="font-size: 12px"><i class="far fa-save"></i> Save to/Load from JSON:</p>
+                        <!-- save/load/delete points to json-->
+                        <p style="font-size: 12px"><i class="far fa-save"></i> Save/Load/Delete JSON:</p>
                         <div style="padding-top:10px">
                             <input type="button" value="save" id="saveJSONButton" style="font-size: 10px;">
                             <input type="button" value="load" id="loadJSONButton" style="font-size: 10px;">
+                            <input type="button" value="delete" id="deleteJSONButton" style="font-size: 10px;">
                         </div>
 
                         <br />
@@ -543,12 +544,11 @@
                         <!-- select data -->
                         <div style="vertical-align:top;">
                             <p style="font-size: 12px"><i class="fas fa-map-marked-alt"></i> Select Dataset</p>
-                            <input type="checkbox" id='earthquakes' name='dataset' checked
-                                style="font-size: 10px; padding: 2px; margin:2px">
+                            <input type="checkbox" id='earthquakes' name='dataset' checked style="font-size: 10px; padding: 2px; margin:2px">
                             <label for='earthquakes'>Earthquakes</label><br>
-                            <!-- <input type="checkbox" id='volcanos' name='dataset' checked style="font-size: 10px; padding: 2px; margin:2px">
+                            <input type="checkbox" id='volcanos' name='dataset' checked style="font-size: 10px; padding: 2px; margin:2px">
                             <label for='volcanos'>Volcanos</label><br>
-                            <input type="checkbox" id='ufos' name='ufos' checked style="font-size: 10px; padding: 2px; margin:2px">
+                            <!-- <input type="checkbox" id='ufos' name='ufos' checked style="font-size: 10px; padding: 2px; margin:2px">
                             <label for='ufos'>UFO sightings</label><br> -->
                         </div>
 
@@ -566,7 +566,8 @@
 
                             <div style="padding-top:10px">
                                 <input type="button" value="query" id="queryBBButton" style="font-size: 10px;">
-                                <input type="button" value="visualize" id="queryBBButtonViz" style="font-size: 10px;">
+                                <input type="button" value="convex hull" id="convBBButton" style="font-size: 10px;">
+                                <!-- <input type="button" value="visualize" id="queryBBButtonViz" style="font-size: 10px;"> -->
                                 <input type="button" value="clear" id="queryBBButtonClear" style="font-size: 10px;">
                             </div>
                         </div>
@@ -617,12 +618,11 @@
                         <!-- select data -->
                         <div style="vertical-align:top;">
                             <p style="font-size: 12px"><i class="fas fa-map-marked-alt"></i> Select Dataset</p>
-                            <input type="checkbox" id='earthquakes' name='dataset' checked
-                                style="font-size: 10px; padding: 2px; margin:2px">
+                            <input type="checkbox" id='earthquakes' name='dataset' checked style="font-size: 10px; padding: 2px; margin:2px">
                             <label for='earthquakes'>Earthquakes</label><br>
-                            <!-- <input type="checkbox" id='volcanos' name='dataset' checked style="font-size: 10px; padding: 2px; margin:2px">
+                            <input type="checkbox" id='volcanos' name='dataset' checked style="font-size: 10px; padding: 2px; margin:2px">
                             <label for='volcanos'>Volcanos</label><br>
-                            <input type="checkbox" id='ufos' name='ufos' checked style="font-size: 10px; padding: 2px; margin:2px">
+                            <!-- <input type="checkbox" id='ufos' name='dataset' checked style="font-size: 10px; padding: 2px; margin:2px">
                             <label for='ufos'>UFO sightings</label><br> -->
                         </div>
 
@@ -640,9 +640,9 @@
                             <input type="number" id='nearestNValue' min=1
                                 style="font-size: 11px; padding: 2px; margin:2px" placeholder='N'><br>
 
-                            <!-- <input type="radio" id='radius' name='queryType' style="font-size: 11px; padding: 2px; margin:2px">
+                            <input type="radio" id='radius' name='queryType' style="font-size: 11px; padding: 2px; margin:2px">
                             <label for='radius'>Radius</label><br>
-                            <input type="number" id='radiusKm' min=1 style="font-size: 11px; padding: 2px; margin:2px" placeholder='Km'> -->
+                            <input type="number" id='radiusKm' min=1 style="font-size: 11px; padding: 2px; margin:2px" placeholder='Deg'>
 
                         </div>
 

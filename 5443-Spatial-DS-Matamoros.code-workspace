@@ -6,6 +6,6 @@
 	],
 	"settings": {
 		"python.languageServer": "Pylance",
-		"python.pythonPath": "C:\\Users\\Owner\\miniconda3\\envs\\A03\\python.exe"
+		"python.pythonPath": "C:\\Users\\Owner\\miniconda3\\python.exe"
 	}
 }
