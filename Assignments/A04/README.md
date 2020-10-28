@@ -11,8 +11,8 @@ This project utilizes and builds on [Portmap](https://github.com/portofportlandg
 |   #   | Folder Link | Assignment Description |
 | :---: | ----------- | ---------------------- |
 |   1    | [main_flask_app.py](assets/api/main_flask_app.py) | App backend that runs locally and processes requests (clicks and URLs) from the frontend |
-|   2    | [index.html](index.html) | Interactive HTML map of the world. My code goes from line 445 - 762 |
-|   3    | [map.js](assets/js/map.js) | The javascript/JQuery code that works with `index.html`. My code goes from line 129 - 733|
+|   2    | [index.html](index.html) | Interactive HTML map of the world. |
+|   3    | [map.js](assets/js/map.js) | The javascript/JQuery code that works with `index.html`. |
 |   4    | [testScripts](assets/api/testScripts/) | A set of project functionality prototypes. I wrote these to test features before adding them |
 |   5    | [data](assets/api/data/) | The datasets the used when querying Bounding Box intersections and Nearest Neighbors, Location Tools, and Distance between Cities |
 |   6    | [depracated_data_fixers](assets/api/data/depracated_data_fixers) | Scripts I used to format the datasets to work with the project |
@@ -64,7 +64,7 @@ This project utilizes and builds on [Portmap](https://github.com/portofportlandg
 #### Location Tools
 
 - Enter a latitude (value between -90 and 90) and longitude (value between -180 and 180), click 'find', and a red circle will appear at that location. Repeat this as many times as you'd like. Press 'clear' to remove all points from the map.
-- Click 'save' to save all points visible on the map to [`savedJSON.geojson`](assets/api/data/savedJSON.geojson). Click 'load' to load all points from `savedJSON.geojson` onto the map. Click 'delete' to wipe the system memory of all points visible on the map.
+- Click 'save' to save all points visible on the map to [`assets/api/data/savedJSON.geojson`](assets/api/data/savedJSON.geojson). Click 'load' to load all points from `savedJSON.geojson` onto the map. Click 'delete' to wipe the system memory of all points visible on the map.
 - Note: whenever a point is added to the map, either through loading from a `.geojson` file or manually by hitting 'find', that point is saved in memory as a `.geojson` feature. That feature is what 'delete' wipes. 'delete' does not remove points from the map or erase the `.geojson` file we can load from or save to.
 
 #### Bounding Box Query
@@ -93,13 +93,12 @@ This project utilizes and builds on [Portmap](https://github.com/portofportlandg
 
 ## Undesired behavior
 
-- Map does not center on newly added geometries to the map in Location Tools or Upload GeoJSON.
 - There is no distinction between points from different datasets in Nearest Neighbor Query or Bounding Box Query
 - Webpage refreshes when the 'save' button is clicked in Location Tools
 
 #
 
-# PortMap Documentation
+# Original PortMap Documentation
 
 A responsive web map application template using [Bootstrap](https://getbootstrap.com/) and [Mapbox GL](https://www.mapbox.com/mapbox-gl-js/api/)
 
