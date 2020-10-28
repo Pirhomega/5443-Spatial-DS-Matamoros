@@ -63,8 +63,8 @@ This project utilizes and builds on [Portmap](https://github.com/portofportlandg
 
 #### Location Tools
 
-- Enter a latitude (value between -90 and 90) and longitude (value between -180 and 180), click 'find', and a red circle will appear at that location. Repeat this as many times as you'd like. Press 'clear' to remove all points from the map. 
-- Click 'save' to save all points visible on the map to a `.geojson` file. Click 'load' to load all points from that `.geojson` file onto the map. Click 'delete' to wipe the system memory of all points visible on the map. 
+- Enter a latitude (value between -90 and 90) and longitude (value between -180 and 180), click 'find', and a red circle will appear at that location. Repeat this as many times as you'd like. Press 'clear' to remove all points from the map.
+- Click 'save' to save all points visible on the map to [`savedJSON.geojson`](assets/api/data/savedJSON.geojson). Click 'load' to load all points from `savedJSON.geojson` onto the map. Click 'delete' to wipe the system memory of all points visible on the map.
 - Note: whenever a point is added to the map, either through loading from a `.geojson` file or manually by hitting 'find', that point is saved in memory as a `.geojson` feature. That feature is what 'delete' wipes. 'delete' does not remove points from the map or erase the `.geojson` file we can load from or save to.
 
 #### Bounding Box Query
@@ -107,43 +107,47 @@ To get started you need to generate a Mapbox ID. Get your ID by creating a Mapbo
 
 ## What it does
 
-* Layer tree allows the user to interactively organize and reposition map layers using [Mapbox-GL-JS-Layer-Tree](https://github.com/TheGartrellGroup/Mapbox-GL-JS-Layer-Tree)
-* Layer Tree pulls feature symbology automatically via [Font Awesome](http://fontawesome.io/ )
-* Supports drawing and editing using [Mapbox Draw API](https://github.com/mapbox/mapbox-gl-draw)
-* User can calculate area and length of drawn features using [Mapbox Turf](https://www.mapbox.com/help/define-turf/)
-* User can add labels directly to the map as a symbol layer using [Mapbox-GL-JS-Text-Markup](https://github.com/TheGartrellGroup/Mapbox-GL-JS-Text-Markup)
-* User can easily find latitude and longitude by clicking on the map 
-* Global address search using the [mapbox-gl-geocoder](https://github.com/mapbox/mapbox-gl-geocoder)
-* Search JSON Properties with autocomplete and zoom to feature
-* Client side Print Export to PNG or PDF with legend: [Print/Export for Mapbox GL](https://github.com/TheGartrellGroup/Mapbox-GL-Print-Export-For-Port)
-* Identify multiple features and view attributes in a modal
-* Bookmark drop-down list
-* Disclaimer modal 
-* Scale bar 
-* Not included in this repo: Save Views function allows the user to save Layer Tree configuration, Mapbox drawn features, Text Markups, and Zoom and Pitch. All plugins in this repo have code pre-built to work with the Save Views plugin: [Mapbox-GL-JS-save-view](https://github.com/TheGartrellGroup/Mapbox-GL-JS-save-view)
+- Layer tree allows the user to interactively organize and reposition map layers using [Mapbox-GL-JS-Layer-Tree](https://github.com/TheGartrellGroup/Mapbox-GL-JS-Layer-Tree)
+- Layer Tree pulls feature symbology automatically via [Font Awesome](http://fontawesome.io/ )
+- Supports drawing and editing using [Mapbox Draw API](https://github.com/mapbox/mapbox-gl-draw)
+- User can calculate area and length of drawn features using [Mapbox Turf](https://www.mapbox.com/help/define-turf/)
+- User can add labels directly to the map as a symbol layer using [Mapbox-GL-JS-Text-Markup](https://github.com/TheGartrellGroup/Mapbox-GL-JS-Text-Markup)
+- User can easily find latitude and longitude by clicking on the map
+- Global address search using the [mapbox-gl-geocoder](https://github.com/mapbox/mapbox-gl-geocoder)
+- Search JSON Properties with autocomplete and zoom to feature
+- Client side Print Export to PNG or PDF with legend: [Print/Export for Mapbox GL](https://github.com/TheGartrellGroup/Mapbox-GL-Print-Export-For-Port)
+- Identify multiple features and view attributes in a modal
+- Bookmark drop-down list
+- Disclaimer modal
+- Scale bar
+- Not included in this repo: Save Views function allows the user to save Layer Tree configuration, Mapbox drawn features, Text Markups, and Zoom and Pitch. All plugins in this repo have code pre-built to work with the Save Views plugin: [Mapbox-GL-JS-save-view](https://github.com/TheGartrellGroup/Mapbox-GL-JS-save-view)
 
+## Demo
 
-## Demo:
 [Demo](https://cdettlaff.github.io./)
 
+## Quick Preview
 
-## Quick Preview:
+### Layer Tree
 
-### Layer Tree 
 ![layers](https://user-images.githubusercontent.com/17071327/33678147-c6cf833a-da6f-11e7-9b74-b3f4fd59ea26.gif)
 
-### Identify 
+### Identify
+
 ![identify](https://user-images.githubusercontent.com/17071327/33678145-c69bbfe6-da6f-11e7-89ba-08cb0b4d2827.gif)
 
 ### Draw and Text
+
 ![draw](https://user-images.githubusercontent.com/17071327/33678143-c650e782-da6f-11e7-8771-2537d8bf6c31.gif)
 
 ### Search JSON with autocomplete
+
 ![search](https://user-images.githubusercontent.com/17071327/33678150-c80cdd74-da6f-11e7-8d16-e6a9dfdbb43b.gif)
 
-### Client Side Printing  
+### Client Side Printing
+
 ![print](https://user-images.githubusercontent.com/17071327/33678149-c7da0f8e-da6f-11e7-8883-6d4d06af7da5.gif)
 
-### Mobile View   
-![mobile](https://user-images.githubusercontent.com/17071327/33678148-c70a666c-da6f-11e7-81c8-cdb6e7e99de8.gif)
+### Mobile View
 
+![mobile](https://user-images.githubusercontent.com/17071327/33678148-c70a666c-da6f-11e7-81c8-cdb6e7e99de8.gif)

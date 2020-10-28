@@ -5,8 +5,6 @@
 
 # remove visual studio code settings folder
 .vscode/
-Assignments/A04/assets/images/icons/
-us_railroads.geojson
 
 # User-specific files
 *.rsuser
