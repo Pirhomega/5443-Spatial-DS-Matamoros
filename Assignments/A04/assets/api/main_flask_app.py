@@ -5,8 +5,7 @@ from flask import Flask
 from flask import request
 from flask import jsonify
 from flask_cors import CORS
-import rtree
-import geopandas
+from geopandas import GeoDataFrame
 import json
 import numpy as np
 from scipy.spatial import cKDTree
@@ -39,11 +38,13 @@ saveCoords_featurecollection = {
 def saveCoord():
     """
     Purpose:    Receives a latitude and longtitude value from the frontend
-                    and uses it to append a properly-formatted geojson feature
-                    to the feature collection `results_featurecollection`.
+                and uses it to append a properly-formatted geojson feature
+                to the feature collection `results_featurecollection`.
+
     Input:      Two strings equivalent to a longitude and latitude value
+
     Output:     A source ID integer that the frontend will use to name the spot
-                    on the map represented by the longitude and latitude inputted.
+                on the map represented by the longitude and latitude inputted.
     """
     global saveCoords_featurecollection
     # the longitude and latitude values from the frontend
@@ -66,10 +67,12 @@ def saveCoord():
 def saveJSON():
     """
     Purpose:    Saves feature collection saved in `results_featurecollection`
-                    to a .geojson file
+                to a .geojson file
+
     Input:      None
+
     Output:     A trivial integer that the frontend needs so the backend doesn't crash.
-                (The backend needs to return something, apparently)
+                    (The backend needs to return something, apparently)
     """
     with open('./Assignments/A04/assets/api/data/savedJSON.geojson', 'w') as out:
         json.dump(saveCoords_featurecollection, out, indent="  ")
@@ -81,7 +84,9 @@ def loadJSON():
     Purpose:    Loads a properly formatted geojson file into `results_featurecollection`
                     passing the number of feature objects in it and the list of feature
                     objects to the frontend for loading onto a map
+
     Input:      None
+
     Output:     A python dictionary with the key equal to the number of feature objects,
                     and a value of a list of feature objects
     """
@@ -97,7 +102,9 @@ def loadJSON():
 def deleteCoord():
     """
     Purpose:    Remove all features from the `results_featurecollection` geojson object
+
     Input:      None
+
     Output:     A dictionary with a key equal to the number of coords the frontend
                     will delete from the map and a value equal to a list of the
                     feature objects the frontend will delete (these feature objects 
@@ -144,8 +151,17 @@ dataset_map = {
 
 # datasets is dictionary of the selected datasets from the frontend: {"earthquakes": 1, "volcanos": 0, "ufos": 0}
 def process_datasets(datasets):
+    """
+    Purpose:    To load queriable datasets into a KDtree, geopandas dataframe, 
+                numpy array and store these in a global dictionary
+
+    Inputs:     `datasets`: a dictionary with a dataset name and a value of either 0 or 1
+                (indicating the dataset must be loaded)
+
+    Outputs:    None
+    """
     global dataset_map
-    # iterate through each dataset checked-boxed in the front end, load the data
+    # iterate through each dataset check-boxed in the front end, load the data
     #   from the dataset geojson file, create a KD tree from the data
     for dataset in datasets:
         # if the dataset checkbox was checked (i.e. the dataset key has a value of 1),
@@ -154,12 +170,23 @@ def process_datasets(datasets):
             if not dataset_map[dataset]["loaded"]:
                 # create a KD tree with the data and store it and the 
                 loaded_dataset_with_properties = load_data_into_KDtree(dataset_map[dataset]["path"])
+
                 dataset_map[dataset]["loaded"] = True
                 dataset_map[dataset]["kdtree"] = loaded_dataset_with_properties[0]
                 dataset_map[dataset]["dataframe"] = loaded_dataset_with_properties[1]
                 dataset_map[dataset]["npArray"] = loaded_dataset_with_properties[2]
     
 def load_data_into_KDtree(path_to_dataset):
+    """
+    Purpose:    Reads geospatial data from a file and store it in a KD-tree, 
+                numpy array, and geopandas dataframe
+
+    Inputs:     `path_to_dataset`: A string of the path to the 'dataset.geojson' file
+
+    Outputs:    `datasetKD`: A KD-tree of the .geojson data
+                `datasetDF`: A Geopandas dataframe of the .geojson data
+                `datasetNP': A numpy array of the .geojson data points
+    """
     data = ''
     if path.isfile(path_to_dataset):
         with open(path_to_dataset, 'r') as f:
@@ -168,7 +195,7 @@ def load_data_into_KDtree(path_to_dataset):
         print("Incorrect path to dataset. Check DATASET_MAP and see if the path is correct.")
     dataset = loads(data)
     # creates a geopandas dataframe with the data
-    datasetDF = geopandas.GeoDataFrame.from_features(dataset, crs="EPSG:4326")
+    datasetDF = GeoDataFrame.from_features(dataset, crs="EPSG:4326")
     # since cKDTree needs an array-like object to query nearest neighbors, we create
     #   such an array
     datasetNP = np.array(list(datasetDF.geometry.apply(lambda x: (x.x, x.y))))
@@ -184,36 +211,46 @@ def load_data_into_KDtree(path_to_dataset):
 
 @app.route('/nnQuery/')
 def nnQuery():
+    """
+    Purpose:    Performs a nearest neighbor query, returning either the 'N' closest points
+                to a geometry, or all points within a certain radius of a geometry
+    
+    Input:     `NNparams`: a dictionary containing the datasets to be queried, the geometry
+                from which the query must be, and the type of query (N nearest neighbors, or
+                all within a radius)
+    
+    Output:     `full_results`: a list of JSON features of all points returned from the nearest
+                neighbor query
+    """
     full_results = []
-    # queryDict = {"datasets":{}, "geojson":{}, "queryType":{}}
+
+    # Input
+    #   queryDict = {"datasets":{}, "geojson":{}, "queryType":{}}
     queryDict = json.loads(request.args.get("NNparams"))
+
+    # load all datasets to be queried for querying
     process_datasets(queryDict["datasets"])
+    # store the longitude and latitude of the point from the which nearest neighbor query shall be made
     lng, lat = queryDict["geojson"]["geometry"]["coordinates"][0], queryDict["geojson"]["geometry"]["coordinates"][1]
+    # if the query is to return the N nearest neighbors
     if queryDict["queryType"]["name"] == "nearestN":
         # iterating through the dataset dictionary
         for dataset in dataset_map:
-            # this if statement only allows data from the datasets checked in the frontend to be queried
-            #   Otherwise, all the datasets here in the backend would be queried, loaded or not. This also
-            #   prevents datasets that are loaded but weren't checked in the frontend from being queried
+            # only query the datasets that were checkboxed in the frontend
             if queryDict['datasets'][dataset]:
                 # returns the numpy array indices of the nearest neighbors of `[lng, lat]`, nearest to farthest
                 _, indices = dataset_map[dataset]['kdtree'].query([lng, lat], k=int(queryDict["queryType"]["value"]))
-                # a dataframe ONLY OF the nearest neighbors (each nearest neighbor has the properties data
-                #   from the dataset input file). The dataframe is then converted to a JSON string, which is
-                #   then parsed into a python dict
+                # `dataset_map[dataset]['dataframe'].iloc[indices]` produces a dataframe ONLY OF the nearest neighbors 
+                #   (each nearest neighbor has the properties data from the dataset input file). 
+                #   The dataframe is then converted to a JSON string, which is then parsed into a python dict
                 full_results += json.loads((dataset_map[dataset]['dataframe'].iloc[indices]).to_json())['features']
+    # if the query is to return all neighbors within a radius
     else:
-        # iterating through the dataset dictionary
         for dataset in dataset_map:
-            # this if statement only allows data from the datasets checked in the frontend to be queried
-            #   Otherwise, all the datasets here in the backend would be queried, loaded or not. This also
-            #   prevents datasets that are loaded but weren't checked in the frontend from being queried
             if queryDict['datasets'][dataset]:
-                # returns the numpy array indices of the nearest neighbors of `[lng, lat]`, nearest to farthest
+                # the only difference between this block and the one up there is the `query_ball_point` call, which takes
+                #   the center of the query circle `[lng, lat]` and the radius, `r`
                 indices = dataset_map[dataset]['kdtree'].query_ball_point([lng, lat], r=int(queryDict["queryType"]["value"]))
-                # a dataframe ONLY OF the nearest neighbors (each nearest neighbor has the properties data
-                #   from the dataset input file). The dataframe is then converted to a JSON string, which is
-                #   then parsed into a python dict
                 full_results += json.loads((dataset_map[dataset]['dataframe'].iloc[indices]).to_json())['features']
     return jsonify(full_results)
 
@@ -231,6 +268,8 @@ def nnQuery():
                          \______/                                                                                 
 """
 
+# dictionary of the USA city data which holds the path to the geojson file,
+#   a bool for whether the data is stored in memory, and the mapped data itself
 distance_map = {
     "cities": {
         "path": "./Assignments/A04/assets/api/data/cities.geojson",
@@ -240,6 +279,13 @@ distance_map = {
 }
 
 def load_cities():
+    """
+    Purpose:    Organizes a data file of USA cities by their first letter within a dictionary
+
+    Input:      None
+
+    Output:     None
+    """
     global distance_map
     # creates a dict mapping cities to a key equal to the first character in their name
     city_letter_map = {}
@@ -256,24 +302,28 @@ def load_cities():
 
 @app.route('/cities/')
 def cities():
+    """
+    Purpose:    Returns a list of cities that begin with the character input from the frontend
+
+    Input:      `city_prompt`: a string of QWERTY chars
+
+    Output:     `search_results`: a list of city names that begin with `city_prompt`
+    """
     # `city_prompt` is whatever the user has typed into the search field on the front end.
     #   For example, they are trying to type "Wichita", so the instant they type the 'W', 
     #   this function gets called with 'W' as `city_prompt` and grabs all the cities that
     #   start with 'W'. Then they type the 'i', which calls this function with `city_prompt`
     #   now "Wi", grabbing all the cities that start with 'Wi'. Rinse and repeat.
     city_prompt = unquote(request.args.get("hint")).title()
-    # search cities.geojson for all cities that begin with the string `city_prompt`.
-    #   Then return those cities as a list. After the user has clicked on the city they want, 
-    #   we query the cities.geojson again to grab the coordinates of the city and draw it on
-    #   on the map.
+    # if the cities are not loaded into `distance_map`, do so
     if not distance_map["cities"]["loaded"]:
         load_cities()
     search_results = []
     # `distance_map["cities"]["map"][city_prompt[0]]` is the first character of the `city_prompt` argument
     # The `if (city_prompt)` prevents all cities being returned as suggestions if the user
     #   deleted their prompt by pressing backspace. The second part of the if statement
-    #   prevents any characters other than english letters found on a QWERTY keyboard from
-    #   returning suggestions
+    #   after the 'and' prevents any characters other than english letters found on a 
+    #   QWERTY keyboard from returning suggestions
     if (city_prompt) and (city_prompt[0] in distance_map["cities"]["map"]):
         for city_document in distance_map["cities"]["map"][city_prompt[0]]:
             if city_prompt in city_document["properties"]["name"]:
@@ -286,14 +336,24 @@ def cities():
 
 @app.route('/cityDist/')
 def cityDist():
+    """
+    Purpose:    Process a request from the frontend that returns the goejson features
+                of two queried cities, as well as a LineString feature representing the
+                'as-the-crows-flies' path between the two
+    
+    Input:      `citySource`: The name of the source city
+                `cityDest`: The name of the destination city
+    
+    Output:     `cityDist_Features`: a list of the feature documents of the two cities -
+                `citySource` and `cityDest` - and the linear LineString connecting them
+    """
     citySource, cityDest = request.args.get("cityArgs",None).split(',')
     citySource = (unquote(citySource)).title()
     cityDest = (unquote(cityDest)).title()
     cityDist_Features = []
     # only run if both source and destination cities are populated with text
     if citySource and cityDest:
-
-        # find the cities and append the JSON object to the features list
+        # find the cities and append the JSON object to `cityDist_Features`
         #   to send back to the front end
         for city_document in distance_map["cities"]["map"][citySource[0]]:
             if city_document["properties"]["name"] == citySource:
@@ -303,6 +363,7 @@ def cityDist():
             if city_document["properties"]["name"] == cityDest:
                 cityDist_Features.append(city_document)
                 break
+        # append the LineString connecting both cities to `cityDist_Features`
         cityDist_Features.append({
             'type': "feature",
             'properties': {},
@@ -331,11 +392,23 @@ def cityDist():
 """
 
 def queryBBoxIntersection(BBparams):
+    """
+    Purpose:    Performs a bounding box query on all selected datasets
+
+    Input:      `BBparams`: a dictionary of the datasets to be queried, and the 
+                top left and bottom right corners of the bounding box
+    
+    Output:     `full_results`: a list of the feature documents of all points
+                contained within the bounding box
+                `bbox['features']`: a feature document of the bounding box
+    """
+    # store the top, left, bottom, and right coordinate borders of the bounding box
     top, left, bottom, right = \
         float(BBparams["bbox"][0].split(',')[0]), \
         float(BBparams["bbox"][0].split(',')[1]), \
         float(BBparams["bbox"][1].split(',')[0]), \
         float(BBparams["bbox"][1].split(',')[1])
+    # the bounding box's polygon feature
     bbox = {
     'type':"FeatureCollection",
     "features": [{
@@ -357,29 +430,47 @@ def queryBBoxIntersection(BBparams):
         }
     }]
     }
-    # load the bounding box that loosely bounds the US, where (x=lon, y=lat)
-    bbox_df = geopandas.GeoDataFrame.from_features(bbox, crs="EPSG:4326")
+    # create a dataframe of the `bbox` feature
+    bbox_df = GeoDataFrame.from_features(bbox, crs="EPSG:4326")
+    # load the datasets into memory
     process_datasets(BBparams["datasets"])
+
     full_results = []
-    # iterating through the dataset dictionary
-    for dataset in BBparams['datasets']:
-        # this if statement only allows data from the datasets checked in the frontend to be queried
-        #   Otherwise, all the datasets here in the backend would be queried, loaded or not. This also
-        #   prevents datasets that are loaded but weren't checked in the frontend from being queried
+    for dataset in dataset_map:
+        # only query the datasets that were checkboxed in the frontend
         if BBparams['datasets'][dataset]:
-            # queries the volcanos dataframe for all points in bbox_df's bounding box
+            # queries the dataset dataframe for all points in `bbox_df`'s bounding box
             points_in_bbox, _ = bbox_df.sindex.query_bulk(dataset_map[dataset]["dataframe"].geometry, predicate='intersects')
-            # create a dataframe of all the intersecting points in volcanos dataframe
+            # create a dataframe of all the intersecting points in dataset dataframe
             matches = dataset_map[dataset]["dataframe"].iloc[points_in_bbox]
             full_results += json.loads(matches.to_json())['features']
     return full_results, bbox['features']
 
 @app.route('/boundingBoxQuery/')
 def boundingBoxQuery():
+    """
+    Purpose:    To receive a request from the frontend to perform a bounding box
+                query on datasets
+
+    Input:      `BBparams`: a dictionary of the datasets to be queried, and the 
+                top left and bottom right corners of the bounding box
+
+    Output:     `features + bbox_feature`: a list of all feature documents of points
+                contained by the bbox, and the bbox feature document
+    """
     BBparams = json.loads(request.args.get("BBparams", None))
-    return jsonify(queryBBoxIntersection(BBparams))
+    features, bbox_feature = queryBBoxIntersection(BBparams)
+    return jsonify(features + bbox_feature)
 
 def createPolygonFromPoints(features):
+    """
+    Purpose:    Convert a Feature Collection of many features of points
+                into a single feature of a polygon
+
+    Input:      `features`: A list of features of points
+
+    Output:     `polygon`: A feature polygon made of the points
+    """
     polygon = {
         'type':'Feature',
         'properties': {},
@@ -397,8 +488,13 @@ def createPolygonFromPoints(features):
 @app.route("/convexQuery/")
 def convexQuery():
     """
-    Purpose:    Return the smallest polygon that contains a set of points
-    Input:      `BBparams`: a JSON
+    Purpose:    Return the smallest convex polygon that contains a set of points
+
+    Input:      `BBparams`: a dictionary of the datasets to be queried, and the 
+                top left and bottom right corners of the bounding box
+
+    Output:     `convex_full_results['features']+intersections`: a list of the
+                feature polygon of the convex hull and the points contained by it
     """
     convexFC = {
         'type': "FeatureCollection",
@@ -406,9 +502,12 @@ def convexQuery():
     }
 
     BBparams = json.loads(request.args.get("BBparams", None))
+    # store a feature list of points contained by the bounding box
     intersections, _ = queryBBoxIntersection(BBparams)
+    # append to `convexFC` the polygon formed by all the points within the bbox
     convexFC['features'] = [createPolygonFromPoints(intersections)]
-    convexParams = geopandas.GeoDataFrame.from_features(convexFC, crs="EPSG:4326")
+    # create a dataframe with the polygon
+    convexParams = GeoDataFrame.from_features(convexFC, crs="EPSG:4326")
     # create a geoseries of points that form the smallest convex Polygon
     #   "The convex hull of a geometry is the smallest convex Polygon containing 
     #   all the points in each geometry, unless the number of points in the geometric 
@@ -419,7 +518,16 @@ def convexQuery():
     # return a list of the convex hull and the intersecting points found within the bounding box
     return jsonify(convex_full_results['features']+intersections)
 
-######################################################################################
+"""
+ /$$      /$$           /$$          
+| $$$    /$$$          |__/          
+| $$$$  /$$$$  /$$$$$$  /$$ /$$$$$$$ 
+| $$ $$/$$ $$ |____  $$| $$| $$__  $$
+| $$  $$$| $$  /$$$$$$$| $$| $$  \ $$
+| $$\  $ | $$ /$$__  $$| $$| $$  | $$
+| $$ \/  | $$|  $$$$$$$| $$| $$  | $$
+|__/     |__/ \_______/|__/|__/  |__/
+"""
 
 if __name__ == '__main__':
     # if the user launched the script in debugger mode

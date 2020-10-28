@@ -122,9 +122,34 @@ map.on('load', function () {
 
 });
 
+/*
+ /$$$$$$$                      /$$                  /$$$$$$                      /$$       /$$          /$$               /$$$$$$                  /$$          
+| $$__  $$                    |__/                 /$$__  $$                    | $$      |__/         | $/              /$$__  $$                | $$          
+| $$  \ $$  /$$$$$$   /$$$$$$  /$$ /$$$$$$$       | $$  \__/  /$$$$$$   /$$$$$$ | $$$$$$$  /$$ /$$$$$$$|_//$$$$$$$      | $$  \__/  /$$$$$$   /$$$$$$$  /$$$$$$ 
+| $$$$$$$  /$$__  $$ /$$__  $$| $$| $$__  $$      | $$       /$$__  $$ /$$__  $$| $$__  $$| $$| $$__  $$ /$$_____/      | $$       /$$__  $$ /$$__  $$ /$$__  $$
+| $$__  $$| $$$$$$$$| $$  \ $$| $$| $$  \ $$      | $$      | $$  \ $$| $$  \__/| $$  \ $$| $$| $$  \ $$|  $$$$$$       | $$      | $$  \ $$| $$  | $$| $$$$$$$$
+| $$  \ $$| $$_____/| $$  | $$| $$| $$  | $$      | $$    $$| $$  | $$| $$      | $$  | $$| $$| $$  | $$ \____  $$      | $$    $$| $$  | $$| $$  | $$| $$_____/
+| $$$$$$$/|  $$$$$$$|  $$$$$$$| $$| $$  | $$      |  $$$$$$/|  $$$$$$/| $$      | $$$$$$$/| $$| $$  | $$ /$$$$$$$/      |  $$$$$$/|  $$$$$$/|  $$$$$$$|  $$$$$$$
+|_______/  \_______/ \____  $$|__/|__/  |__/       \______/  \______/ |__/      |_______/ |__/|__/  |__/|_______/        \______/  \______/  \_______/ \_______/
+                     /$$  \ $$                                                                                                                                  
+                    |  $$$$$$/                                                                                                                                  
+                     \______/                                                                                                                                   
+*/
+
+
 //Enter Lon Lat
 //Enter Lon Lat
 //Enter Lon Lat
+/*
+ /$$                                       /$$     /$$                           /$$$$$$$$                  /$$          
+| $$                                      | $$    |__/                          |__  $$__/                 | $$          
+| $$        /$$$$$$   /$$$$$$$  /$$$$$$  /$$$$$$   /$$  /$$$$$$  /$$$$$$$          | $$  /$$$$$$   /$$$$$$ | $$  /$$$$$$$
+| $$       /$$__  $$ /$$_____/ |____  $$|_  $$_/  | $$ /$$__  $$| $$__  $$         | $$ /$$__  $$ /$$__  $$| $$ /$$_____/
+| $$      | $$  \ $$| $$        /$$$$$$$  | $$    | $$| $$  \ $$| $$  \ $$         | $$| $$  \ $$| $$  \ $$| $$|  $$$$$$ 
+| $$      | $$  | $$| $$       /$$__  $$  | $$ /$$| $$| $$  | $$| $$  | $$         | $$| $$  | $$| $$  | $$| $$ \____  $$
+| $$$$$$$$|  $$$$$$/|  $$$$$$$|  $$$$$$$  |  $$$$/| $$|  $$$$$$/| $$  | $$         | $$|  $$$$$$/|  $$$$$$/| $$ /$$$$$$$/
+|________/ \______/  \_______/ \_______/   \___/  |__/ \______/ |__/  |__/         |__/ \______/  \______/ |__/|_______/ 
+*/
 
 map.on('load', function () {
 
@@ -135,8 +160,9 @@ map.on('load', function () {
             "features": []
         }
 
-        // Purpose:     Adds a source and a layer to the map
-        // Input:       a source ID and a geojson feature object
+        // Purpose:     Creates a map source and layer if they don't already exist
+        //              Otherwise, it modifies the existing source
+        // Input:       None
         // Output:      None
         function loadSourceLayer() {
             if (!map.getSource("displayCoords")) {
@@ -164,7 +190,7 @@ map.on('load', function () {
             }
         };
 
-        // Purpose:     Removes a source ID and its associated layer from the map
+        // Purpose:     Removes a map source and layer
         // Input:       None
         // Output:      None
         function clearSourceLayer() {
@@ -174,21 +200,26 @@ map.on('load', function () {
             if (map.getSource("displayCoords")) {
                 map.removeSource("displayCoords")
             }
-        }
+        };
 
-        //find
+        // Purpose:     Events triggered when the `findLLButton` is pressed
+        //              Queries the backend to save the inputted coordinate
+        //              to a geojson feature list and return that list for displaying
+        // Input:       None
+        // Output:      None
         $('#findLLButton').click(function () {
-            // grabs the number input from the lngInput-latInput fields
+            // grabs the number input from the lngInput-latInput inputs
             var enterLng = +document.getElementById('lngInput').value
             var enterLat = +document.getElementById('latInput').value
 
-            // makes a call to the backend to save the feature object in a
-            //      feature collection
+            // makes a call to the backend to process the coordinate
             $.getJSON("http://localhost:8888/saveCoord/?lngLat=" + [enterLng, enterLat])
                 .done(function (coordFeature) {
-                    // display the coordinate on the map
+                    // assign the coordinate array (a geojson feature array) to
+                    //  the feature array of `displayCoordsFC` and display
                     displayCoordsFC.features = coordFeature
                     loadSourceLayer()
+                    // clear the lat and lng input fields
                     $('#lngInput').val('')
                     $('#latInput').val('')
 
@@ -199,11 +230,17 @@ map.on('load', function () {
                 });
         });
 
-        //clear
+        // Purpose:     Events triggered when the `findLLButtonClear` is pressed.
+        //              Clears `displayCoordsFC`, removes map source and map layer
+        // Input:       None
+        // Output:      None
         $('#findLLButtonClear').click(function () {
+            // remove all features from the `displayCoordsFC` feature collection
             displayCoordsFC.feature = []
+            // remove the source and layers associated with `displayCoordsFC`
             clearSourceLayer()
 
+            // clear the lat and lng input fields
             $('#lngInput').val('')
             $('#latInput').val('')
             // adjusts the map view to be centered on lng=0,lat=0
@@ -212,19 +249,26 @@ map.on('load', function () {
             });
         });
 
-        //save to JSON
+        // Purpose:     Events triggered when the `saveJSONButton` is pressed.
+        //              Saves all points displaying on the map to a geojson file
+        // Input:       None
+        // Output:      None
         $('#saveJSONButton').click(function () {
             $.getJSON("http://localhost:8888/saveJSON/")
                 .done(function (response) {
                     if (parseInt(response)) {
                         console.log("Saved to ./Assignments/A04/assets/api/data/mapCoords.geojson")
                     } else {
-                        console.log("File couldn't be saved")
+                        console.log("File couldn't be saved. Server was interrupted, perhaps?")
                     }
                 })
         })
 
-        //load from JSON
+        // Purpose:     Events triggered when the `loadJSONButton` is pressed.
+        //              Displays all points stored in ./Assignments/A04/assets/api/data/mapCoords.geojson
+        //              to the map
+        // Input:       None
+        // Output:      None
         $('#loadJSONButton').click(function () {
             $.getJSON("http://localhost:8888/loadJSON/")
                 .done(function (json) {
@@ -238,7 +282,11 @@ map.on('load', function () {
                 })
         })
 
-        //delete JSON
+        // Purpose:     Events triggered when the `deleteJSONButton` is pressed.
+        //              Queries the backend to delete all points cached (a point
+        //              is cached when it is displayed on the screen)
+        // Input:       None
+        // Output:      None
         $('#deleteJSONButton').click(function () {
             $.getJSON("http://localhost:8888/deleteJSON/")
                 .done(function (response) {
@@ -254,19 +302,31 @@ map.on('load', function () {
 // Bounding Box Query
 // Bounding Box Query
 
+/*
+ /$$$$$$$  /$$$$$$$                             /$$$$$$                                         
+| $$__  $$| $$__  $$                           /$$__  $$                                        
+| $$  \ $$| $$  \ $$  /$$$$$$  /$$   /$$      | $$  \ $$ /$$   /$$  /$$$$$$   /$$$$$$  /$$   /$$
+| $$$$$$$ | $$$$$$$  /$$__  $$|  $$ /$$/      | $$  | $$| $$  | $$ /$$__  $$ /$$__  $$| $$  | $$
+| $$__  $$| $$__  $$| $$  \ $$ \  $$$$/       | $$  | $$| $$  | $$| $$$$$$$$| $$  \__/| $$  | $$
+| $$  \ $$| $$  \ $$| $$  | $$  >$$  $$       | $$/$$ $$| $$  | $$| $$_____/| $$      | $$  | $$
+| $$$$$$$/| $$$$$$$/|  $$$$$$/ /$$/\  $$      |  $$$$$$/|  $$$$$$/|  $$$$$$$| $$      |  $$$$$$$
+|_______/ |_______/  \______/ |__/  \__/       \____ $$$ \______/  \_______/|__/       \____  $$
+                                                    \__/                               /$$  | $$
+                                                                                      |  $$$$$$/
+                                                                                       \______/ 
+*/
 map.on('load', function () {
 
     $(document).ready(function () {
-
-        // var bbFeature = {}
 
         var bBoxFeature_Collection = {
             "type": "FeatureCollection",
             "features": []
         }
 
-        // Purpose:     Adds a source and a layer to the map
-        // Input:       a source ID and a geojson feature object
+        // Purpose:     Creates a map source and layer if they don't already exist
+        //              Otherwise, it modifies the existing source
+        // Input:       None
         // Output:      None
         function loadSourceLayer() {
             if (!map.getSource("coordsBB")) {
@@ -308,7 +368,7 @@ map.on('load', function () {
             }
         };
 
-        // Purpose:     Removes a source ID and its associated layer from the map
+        // Purpose:     Removes a map source and layer
         // Input:       None
         // Output:      None
         function clearSourceLayer() {
@@ -323,16 +383,28 @@ map.on('load', function () {
             }
         };
 
-        //fill top left
+        // Purpose:     Events triggered when the `fillTopLeft` is pressed.
+        //              Populates the `topLeftBB` input field with the contents
+        //              from the `pointBB` field
+        // Input:       None
+        // Output:      None
         $('#fillTopLeft').click(function () {
             $('#topLeftBB').val($('#pointBB').text())
         });
 
-        //fill bottom right
+        // Purpose:     Events triggered when the `fillBottomRight` is pressed.
+        //              Populates the `bottomRightBB` input field with the contents
+        //              from the `pointBB` field
+        // Input:       None
+        // Output:      None
         $('#fillBottomRight').click(function () {
             $('#bottomRightBB').val($('#pointBB').text())
         });
 
+        // Purpose:     Creates a JSON document with the name of a dataset and
+        //              a boolean indicated its checkbox was checked
+        // Input:       None
+        // Output:      JSON document
         function chooseDataset() {
             return {
                 "datasets": {
@@ -344,14 +416,22 @@ map.on('load', function () {
             }
         };
 
-        //find
+        // Purpose:     Events triggered when the `queryBBButton` is pressed.
+        //              Queries the backend with bounding box parameters to display
+        //              the bounding box and the geometries contained by it
+        // Input:       None
+        // Output:      None
         $('#queryBBButton').click(function () {
+            // only query the backend if the both bounding box input fields are populated
             if ($('#topLeftBB').val() && $('#bottomRightBB').val()) {
                 let topLeft = $('#topLeftBB').val()
                 let bottomRight = $('#bottomRightBB').val()
 
+                // create a JSON object of the bounding box topleft and bottom right coords
+                //  and the datasets to be queried
                 let BBparams = $.extend({ "bbox": [topLeft, bottomRight] }, chooseDataset())
 
+                // query and display results
                 $.getJSON("http://localhost:8888/boundingBoxQuery/?BBparams=" + JSON.stringify(BBparams))
                     .done(function (bboxAndResults) {
                         bBoxFeature_Collection.features = [...bboxAndResults[0], bboxAndResults[1]]
@@ -360,14 +440,23 @@ map.on('load', function () {
             }
         });
 
-        //convex find
+        // Purpose:     Events triggered when the `convBBButton` is pressed.
+        //              Queries the backend with bounding box parameters to display
+        //              the bounding box and the convex polygon formed by the points
+        //              contained by the bounding box
+        // Input:       None
+        // Output:      None
         $('#convBBButton').click(function () {
+            // only query the backend if the both bounding box input fields are populated
             if ($('#topLeftBB').val() && $('#bottomRightBB').val()) {
                 let topLeft = $('#topLeftBB').val()
                 let bottomRight = $('#bottomRightBB').val()
 
+                // create a JSON object of the bounding box topleft and bottom right coords
+                //  and the datasets to be queried
                 let BBparams = $.extend({ "bbox": [topLeft, bottomRight] }, chooseDataset())
 
+                // query and display results
                 $.getJSON("http://localhost:8888/convexQuery/?BBparams=" + JSON.stringify(BBparams))
                     .done(function (convexHull) {
                         bBoxFeature_Collection.features = convexHull
@@ -376,7 +465,11 @@ map.on('load', function () {
             }
         });
 
-        //clear
+        // Purpose:     Events triggered when the `queryBBButtonClear` is pressed.
+        //              Removes the bounding box and intersecting points source and
+        //              layers from the map view
+        // Input:       None
+        // Output:      None
         $('#queryBBButtonClear').click(function () {
             bBoxFeature_Collection.features = []
             clearSourceLayer()
@@ -389,6 +482,7 @@ map.on('load', function () {
 // Bounding Box Creator Tool
 // Bounding Box Creator Tool
 // Bounding Box Creator Tool
+// Purpose:     Populates the `pointBB` element with the world coordinate location of a user's click
 map.on(touchEvent, function (e) {
     document.getElementById('pointBB').innerHTML =
         JSON.stringify(e.lngLat, function (key, val) { return val.toFixed ? Number(val.toFixed(4)) : val; }).replace('{"lng":', '').replace('"lat":', ' ').replace('}', '')
@@ -397,6 +491,20 @@ map.on(touchEvent, function (e) {
 //Nearest Neighbor Query
 //Nearest Neighbor Query
 //Nearest Neighbor Query
+
+/*
+ /$$   /$$                                                     /$$           /$$   /$$           /$$           /$$       /$$                          
+| $$$ | $$                                                    | $$          | $$$ | $$          |__/          | $$      | $$                          
+| $$$$| $$  /$$$$$$   /$$$$$$   /$$$$$$   /$$$$$$   /$$$$$$$ /$$$$$$        | $$$$| $$  /$$$$$$  /$$  /$$$$$$ | $$$$$$$ | $$$$$$$   /$$$$$$   /$$$$$$ 
+| $$ $$ $$ /$$__  $$ |____  $$ /$$__  $$ /$$__  $$ /$$_____/|_  $$_/        | $$ $$ $$ /$$__  $$| $$ /$$__  $$| $$__  $$| $$__  $$ /$$__  $$ /$$__  $$
+| $$  $$$$| $$$$$$$$  /$$$$$$$| $$  \__/| $$$$$$$$|  $$$$$$   | $$          | $$  $$$$| $$$$$$$$| $$| $$  \ $$| $$  \ $$| $$  \ $$| $$  \ $$| $$  \__/
+| $$\  $$$| $$_____/ /$$__  $$| $$      | $$_____/ \____  $$  | $$ /$$      | $$\  $$$| $$_____/| $$| $$  | $$| $$  | $$| $$  | $$| $$  | $$| $$      
+| $$ \  $$|  $$$$$$$|  $$$$$$$| $$      |  $$$$$$$ /$$$$$$$/  |  $$$$/      | $$ \  $$|  $$$$$$$| $$|  $$$$$$$| $$  | $$| $$$$$$$/|  $$$$$$/| $$      
+|__/  \__/ \_______/ \_______/|__/       \_______/|_______/    \___/        |__/  \__/ \_______/|__/ \____  $$|__/  |__/|_______/  \______/ |__/      
+                                                                                                     /$$  \ $$                                        
+                                                                                                    |  $$$$$$/                                        
+                                                                                                     \______/                                         
+*/
 
 map.on('load', function () {
 
@@ -407,8 +515,9 @@ map.on('load', function () {
             "features": []
         }
 
-        // Purpose:     Adds a source and a layer to the map
-        // Input:       a source ID and a geojson feature object
+        // Purpose:     Creates a map source and layer if they don't already exist
+        //              Otherwise, it modifies the existing source
+        // Input:       None
         // Output:      None
         function loadSourceLayer() {
             if (!map.getSource("nnCoords")) {
@@ -436,7 +545,7 @@ map.on('load', function () {
             }
         };
 
-        // Purpose:     Removes a source ID and its associated layer from the map
+        // Purpose:     Removes a map source and layer
         // Input:       None
         // Output:      None
         function clearSourceLayer() {
@@ -448,6 +557,10 @@ map.on('load', function () {
             }
         }
 
+        // Purpose:     Creates a JSON document with the name of a dataset and
+        //              a boolean indicated its checkbox was checked
+        // Input:       None
+        // Output:      JSON document
         function chooseDataset() {
             return {
                 "datasets": {
@@ -459,7 +572,13 @@ map.on('load', function () {
             }
         };
 
+        // Purpose:     Creates a JSON document with the nearest neighbor query
+        //              type as well as the value
+        // Input:       None
+        // Output:      JSON document
         function chooseQueryType() {
+            // If the user wants to query the N nearest neighbors, return a document
+            //      with that query type and the value of N
             if (document.getElementById("nearestN").checked)
                 return {
                     "queryType": {
@@ -467,6 +586,8 @@ map.on('load', function () {
                         "value": document.getElementById('nearestNValue').value
                     }
                 }
+            // If the user wants to query all neighbors within a circular radius R,
+            //      return a document with that query type and the value of R
             else
                 return {
                     "queryType": {
@@ -476,7 +597,12 @@ map.on('load', function () {
                 }
         };
 
-        //find
+        // Purpose:     Events triggered when the `queryNN` is pressed.
+        //              Queries the backend for a nearest neighbor query on
+        //              the user's selected datasets, receiving a feature list
+        //              from the backend to display on the map
+        // Input:       None
+        // Output:      None
         $('#queryNN').click(function () {
             var selectedDatasets = chooseDataset()
             var selectQueryType = chooseQueryType()
@@ -487,10 +613,12 @@ map.on('load', function () {
 
             // creates a geojson feature object with the lng and lat values
             var enterLL = { "geojson": turf.point([enterLng, enterLat]) }
+            // creates a JSON document of the user's selected datasets to query, the query
+            //      type selected, and the coords of the point from which the query will
+            //      take place
             var NNparams = $.extend({}, selectedDatasets, selectQueryType, enterLL)
 
-            // makes a call to the backend to save the feature object in a
-            //      feature collection
+            // query the backend and display results
             $.getJSON("http://localhost:8888/nnQuery/?NNparams=" + JSON.stringify(NNparams))
                 .done(function (nnFeatures) {
                     nearestNeighborsFC.features = nnFeatures
@@ -501,7 +629,10 @@ map.on('load', function () {
                 });
         });
 
-        //clear
+        // Purpose:     Events triggered when the `queryNNClear` is pressed.
+        //              Clears the map of the nearest neighbors layer and source
+        // Input:       None
+        // Output:      None
         $('#queryNNClear').click(function () {
             clearSourceLayer()
             // adjusts the map view to be centered on lng=0,lat=0
@@ -516,7 +647,19 @@ map.on('load', function () {
 //Distance between cities
 //Distance between cities
 //Distance between cities
-
+/*
+  /$$$$$$  /$$   /$$                     /$$$$$$$  /$$             /$$                                            
+ /$$__  $$|__/  | $$                    | $$__  $$|__/            | $$                                            
+| $$  \__/ /$$ /$$$$$$   /$$   /$$      | $$  \ $$ /$$  /$$$$$$$ /$$$$$$    /$$$$$$  /$$$$$$$   /$$$$$$$  /$$$$$$ 
+| $$      | $$|_  $$_/  | $$  | $$      | $$  | $$| $$ /$$_____/|_  $$_/   |____  $$| $$__  $$ /$$_____/ /$$__  $$
+| $$      | $$  | $$    | $$  | $$      | $$  | $$| $$|  $$$$$$   | $$      /$$$$$$$| $$  \ $$| $$      | $$$$$$$$
+| $$    $$| $$  | $$ /$$| $$  | $$      | $$  | $$| $$ \____  $$  | $$ /$$ /$$__  $$| $$  | $$| $$      | $$_____/
+|  $$$$$$/| $$  |  $$$$/|  $$$$$$$      | $$$$$$$/| $$ /$$$$$$$/  |  $$$$/|  $$$$$$$| $$  | $$|  $$$$$$$|  $$$$$$$
+ \______/ |__/   \___/   \____  $$      |_______/ |__/|_______/    \___/   \_______/|__/  |__/ \_______/ \_______/
+                         /$$  | $$                                                                                
+                        |  $$$$$$/                                                                                
+                         \______/                                                                                 
+*/
 map.on('load', function () {
 
     $(document).ready(function () {
@@ -526,8 +669,9 @@ map.on('load', function () {
             "features": []
         }
 
-        // Purpose:     Adds a source and a layer to the map
-        // Input:       a source ID and a geojson feature object
+        // Purpose:     Creates a map source and layer if they don't already exist
+        //              Otherwise, it modifies the existing source
+        // Input:       None
         // Output:      None
         function loadSourceLayer() {
             if (!map.getSource("cityDistCoords")) {
@@ -570,7 +714,7 @@ map.on('load', function () {
             }
         };
 
-        // Purpose:     Removes a source ID and its associated layer from the map
+        // Purpose:     Removes a map source and layer
         // Input:       None
         // Output:      None
         function clearSourceLayer() {
@@ -585,9 +729,17 @@ map.on('load', function () {
             }
         }
 
+        // Purpose:     Events triggered when the `cityDist` is pressed.
+        //              Queries the backend for the feature documents of two cities,
+        //              draws a line between the two and calculates the as-the-crow-flies
+        //              distance between them as well
+        // Input:       None
+        // Output:      None
         $('#cityDist').click(function () {
+            // get the source and destination city names from their input elements
             let citynameSource = $('#inputCitiesSource').val()
             let citynameDest = $('#inputCitiesDest').val()
+            // perform the backend query and draw to the map
             $.get("http://localhost:8888/cityDist/?cityArgs=" + [citynameSource, citynameDest], function (cityDistJSON) {
                 cityDistFC.features = cityDistJSON
                 loadSourceLayer()
@@ -601,6 +753,11 @@ map.on('load', function () {
 
         });
 
+        // Purpose:     Events triggered when the `clearCities` is pressed.
+        //              Removes the city distance value from `calculated-distance`
+        //              and removes the associated source and layer from the map
+        // Input:       None
+        // Output:      None
         $('#clearCities').click(function () {
             $('#calculated-distance p').remove();
             clearSourceLayer()
@@ -608,10 +765,19 @@ map.on('load', function () {
 
         /***********************************************************************************/
 
+        // Purpose:     Queries the backend with whatever characters were typed into the
+        //              source or destination city input fields and displays the results
+        //              as recommendations in a 'select' element
+        // Input:       None
+        // Output:      None
         function populateCitiesSelect(whichSelect, whichinput) {
             let cityname = $(whichinput).val()
             let html = ''
+            // this backend call will return a list of cities that begin with the characters
+            //      typed into the source/destination city input fields
             $.get("http://localhost:8888/cities/?hint=" + cityname, function (data) {
+                // for every recommended city returned, add an option to the respective city's
+                //      'select' element
                 for (var i = 0; i < data.length; ++i) {
                     html += '<option>' + data[i] + '</option>'
                 }
@@ -621,13 +787,19 @@ map.on('load', function () {
             })
         };
 
-        // suggest cities when typing in the first text box
+        // Purpose:     Events triggered when the `inputCitiesSource` has something typed in it
+        //              Calls `populateCitiesSelect` each time an ASCII character is typed in
+        // Input:       None
+        // Output:      None
         $("#inputCitiesSource").keyup(function (event) {
             if ((event.which > 64 && event.which < 91) || event.which == 32 || event.which == 8)
                 populateCitiesSelect("#citySelectSource", "#inputCitiesSource")
         });
 
-        // suggest cities when typing in the second text box
+        // Purpose:     Events triggered when the `inputCitiesDest` has something typed in it
+        //              Calls `populateCitiesSelect` each time an ASCII character is typed in
+        // Input:       None
+        // Output:      None
         $("#inputCitiesDest").keyup(function (event) {
             if ((event.which > 64 && event.which < 91) || event.which == 32 || event.which == 8)
                 populateCitiesSelect("#citySelectDest", "#inputCitiesDest")
@@ -635,13 +807,19 @@ map.on('load', function () {
 
         /***********************************************************************************/
 
+        // Purpose:     Removes all options from a 'select' element
+        // Input:       None
+        // Output:      None
         function emptySelectOptions(whichSelect) {
             // modify the select
             $(whichSelect).attr("size", "0")
             $(whichSelect).html('<option></option>')
         };
 
-        // autofills the citySelectDest box when one of the selector options is clicked
+        // Purpose:     Events triggered when the `citySelectDest` has something typed in it
+        //              Autofills the citySelectDest box when one of the selector options is clicked
+        // Input:       None
+        // Output:      None
         $("#citySelectDest")
             .change(function () {
                 var str = ""
@@ -653,7 +831,10 @@ map.on('load', function () {
             })
             .trigger("change");
 
-        // autofills the citySelectSource box when one of the selector options is clicked
+        // Purpose:     Events triggered when the `citySelectDest` has something typed in it
+        //              Autofills the citySelectSource box when one of the selector options is clicked
+        // Input:       None
+        // Output:      None
         $("#citySelectSource")
             .change(function () {
                 let str = ""
@@ -674,12 +855,26 @@ map.on('load', function () {
 //Upload GeoJSON
 //Upload GeoJSON
 
+/*
+ /$$   /$$           /$$                           /$$        /$$$$$$                         /$$$$$  /$$$$$$   /$$$$$$  /$$   /$$
+| $$  | $$          | $$                          | $$       /$$__  $$                       |__  $$ /$$__  $$ /$$__  $$| $$$ | $$
+| $$  | $$  /$$$$$$ | $$  /$$$$$$   /$$$$$$   /$$$$$$$      | $$  \__/  /$$$$$$   /$$$$$$       | $$| $$  \__/| $$  \ $$| $$$$| $$
+| $$  | $$ /$$__  $$| $$ /$$__  $$ |____  $$ /$$__  $$      | $$ /$$$$ /$$__  $$ /$$__  $$      | $$|  $$$$$$ | $$  | $$| $$ $$ $$
+| $$  | $$| $$  \ $$| $$| $$  \ $$  /$$$$$$$| $$  | $$      | $$|_  $$| $$$$$$$$| $$  \ $$ /$$  | $$ \____  $$| $$  | $$| $$  $$$$
+| $$  | $$| $$  | $$| $$| $$  | $$ /$$__  $$| $$  | $$      | $$  \ $$| $$_____/| $$  | $$| $$  | $$ /$$  \ $$| $$  | $$| $$\  $$$
+|  $$$$$$/| $$$$$$$/| $$|  $$$$$$/|  $$$$$$$|  $$$$$$$      |  $$$$$$/|  $$$$$$$|  $$$$$$/|  $$$$$$/|  $$$$$$/|  $$$$$$/| $$ \  $$
+ \______/ | $$____/ |__/ \______/  \_______/ \_______/       \______/  \_______/ \______/  \______/  \______/  \______/ |__/  \__/
+          | $$                                                                                                                    
+          | $$                                                                                                                    
+          |__/                                                                                                                    
+*/
 map.on('load', function () {
 
     $(document).ready(function () {
 
-        // Purpose:     Adds a source and a layer to the map
-        // Input:       a source ID and a geojson feature object
+        // Purpose:     Creates a map source and layer if they don't already exist
+        //              Otherwise, it modifies the existing source
+        // Input:       None
         // Output:      None
         function loadSourceLayer(geoJSONFC) {
             if (!map.getSource("geoJSONCoords")) {
@@ -734,13 +929,10 @@ map.on('load', function () {
             }
         };
 
-        // Purpose:     Removes a source ID and its associated layer from the map
+        // Purpose:     Removes a map source and layer
         // Input:       None
         // Output:      None
         function clearSourceLayer() {
-            if (map.getLayer("geoJSONMultiLayer")) {
-                map.removeLayer("geoJSONMultiLayer");
-            }
             if (map.getLayer("geoJSONPolyLayer")) {
                 map.removeLayer("geoJSONPolyLayer");
             }
@@ -755,7 +947,10 @@ map.on('load', function () {
             }
         }
 
-        //display geojson
+        // Purpose:     Events triggered when the `submitGJ` button is pressed
+        //              Displays the geojson data pasted into `geoJSONTextBox`
+        // Input:       None
+        // Output:      None
         $('#submitGJ').click(function () {
             // grabs the number input from the lngInput-latInput fields
             var submitted_geojson = JSON.parse(document.getElementById('geoJSONTextBox').value)
@@ -766,7 +961,10 @@ map.on('load', function () {
             });
         });
 
-        //clear geojson
+        // Purpose:     Events triggered when the `clearGJ` button is pressed
+        //              Removes the geojson data displayed on the map
+        // Input:       None
+        // Output:      None
         $('#clearGJ').click(function () {
             clearSourceLayer()
             // adjusts the map view to be centered on lng=0,lat=0
@@ -776,6 +974,18 @@ map.on('load', function () {
         });
     });
 });
+
+/*
+ /$$$$$$$$                 /$$        /$$$$$$                      /$$       /$$          /$$               /$$$$$$                  /$$          
+| $$_____/                | $$       /$$__  $$                    | $$      |__/         | $/              /$$__  $$                | $$          
+| $$       /$$$$$$$   /$$$$$$$      | $$  \__/  /$$$$$$   /$$$$$$ | $$$$$$$  /$$ /$$$$$$$|_//$$$$$$$      | $$  \__/  /$$$$$$   /$$$$$$$  /$$$$$$ 
+| $$$$$   | $$__  $$ /$$__  $$      | $$       /$$__  $$ /$$__  $$| $$__  $$| $$| $$__  $$ /$$_____/      | $$       /$$__  $$ /$$__  $$ /$$__  $$
+| $$__/   | $$  \ $$| $$  | $$      | $$      | $$  \ $$| $$  \__/| $$  \ $$| $$| $$  \ $$|  $$$$$$       | $$      | $$  \ $$| $$  | $$| $$$$$$$$
+| $$      | $$  | $$| $$  | $$      | $$    $$| $$  | $$| $$      | $$  | $$| $$| $$  | $$ \____  $$      | $$    $$| $$  | $$| $$  | $$| $$_____/
+| $$$$$$$$| $$  | $$|  $$$$$$$      |  $$$$$$/|  $$$$$$/| $$      | $$$$$$$/| $$| $$  | $$ /$$$$$$$/      |  $$$$$$/|  $$$$$$/|  $$$$$$$|  $$$$$$$
+|________/|__/  |__/ \_______/       \______/  \______/ |__/      |_______/ |__/|__/  |__/|_______/        \______/  \______/  \_______/ \_______/
+*/
+
 
 // Coordinates Tool
 // Coordinates Tool
