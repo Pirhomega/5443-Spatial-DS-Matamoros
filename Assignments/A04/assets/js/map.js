@@ -135,13 +135,11 @@ map.on('load', function () {
                     |  $$$$$$/                                                                                                                                  
                      \______/                                                                                                                                   
 */
-
-
 //Enter Lon Lat
 //Enter Lon Lat
 //Enter Lon Lat
 /*
- /$$                                       /$$     /$$                           /$$$$$$$$                  /$$          
+/$$                                       /$$     /$$                           /$$$$$$$$                  /$$          
 | $$                                      | $$    |__/                          |__  $$__/                 | $$          
 | $$        /$$$$$$   /$$$$$$$  /$$$$$$  /$$$$$$   /$$  /$$$$$$  /$$$$$$$          | $$  /$$$$$$   /$$$$$$ | $$  /$$$$$$$
 | $$       /$$__  $$ /$$_____/ |____  $$|_  $$_/  | $$ /$$__  $$| $$__  $$         | $$ /$$__  $$ /$$__  $$| $$ /$$_____/
@@ -151,7 +149,7 @@ map.on('load', function () {
 |________/ \______/  \_______/ \_______/   \___/  |__/ \______/ |__/  |__/         |__/ \______/  \______/ |__/|_______/ 
 */
 
-map.on('load', function () {
+   map.on('load', function () {
 
     $(document).ready(function () {
 
@@ -218,6 +216,7 @@ map.on('load', function () {
                     // assign the coordinate array (a geojson feature array) to
                     //  the feature array of `displayCoordsFC` and display
                     displayCoordsFC.features = coordFeature
+                    console.log(displayCoordsFC)
                     loadSourceLayer()
                     // clear the lat and lng input fields
                     $('#lngInput').val('')
@@ -225,8 +224,11 @@ map.on('load', function () {
 
                     // center the view on the newly-added coordinate
                     map.flyTo({
-                        center: [enterLng, enterLat]
+                        center: turf.center(displayCoordsFC).geometry.coordinates
                     });
+                    if (turf.area(turf.bboxPolygon(turf.bbox(displayCoordsFC))) > 1000000) {
+                        map.fitBounds(turf.bbox(displayCoordsFC), {padding: 100})
+                    }
                 });
         });
 
@@ -236,7 +238,7 @@ map.on('load', function () {
         // Output:      None
         $('#findLLButtonClear').click(function () {
             // remove all features from the `displayCoordsFC` feature collection
-            displayCoordsFC.feature = []
+            displayCoordsFC.features = []
             // remove the source and layers associated with `displayCoordsFC`
             clearSourceLayer()
 
@@ -245,7 +247,8 @@ map.on('load', function () {
             $('#latInput').val('')
             // adjusts the map view to be centered on lng=0,lat=0
             map.flyTo({
-                center: [0, 0]
+                center: [0, 0],
+                zoom: 3
             });
         });
 
@@ -271,14 +274,17 @@ map.on('load', function () {
         // Output:      None
         $('#loadJSONButton').click(function () {
             $.getJSON("http://localhost:8888/loadJSON/")
-                .done(function (json) {
-                    displayCoordsFC.features = [...json, displayCoordsFC.features]
+                .done(function (loadedPlusExisting) {
+                    displayCoordsFC.features = loadedPlusExisting
                     loadSourceLayer()
 
-                    // center the view on the centerpoint of all newly added coords
+                    // center the view on the newly-added coordinate
                     map.flyTo({
-                        center: [0, 0]
+                        center: turf.center(displayCoordsFC).geometry.coordinates
                     });
+                    if (turf.area(turf.bboxPolygon(turf.bbox(displayCoordsFC))) > 1000000) {
+                        map.fitBounds(turf.bbox(displayCoordsFC), {padding: 100})
+                    }
                 })
         })
 
@@ -295,6 +301,8 @@ map.on('load', function () {
                     }
                 })
         })
+    });
+});
 
 // Bounding Box Query
 // Bounding Box Query
@@ -313,6 +321,9 @@ map.on('load', function () {
                                                                                       |  $$$$$$/
                                                                                        \______/ 
 */
+map.on('load', function () {
+
+    $(document).ready(function () {
 
         var bBoxFeature_Collection = {
             "type": "FeatureCollection",
@@ -429,8 +440,14 @@ map.on('load', function () {
                 // query and display results
                 $.getJSON("http://localhost:8888/boundingBoxQuery/?BBparams=" + JSON.stringify(BBparams))
                     .done(function (bboxAndResults) {
-                        bBoxFeature_Collection.features = [...bboxAndResults[0], bboxAndResults[1]]
+                        bBoxFeature_Collection.features = bboxAndResults
                         loadSourceLayer()
+
+                        // center the view on the newly-added feature collection
+                        map.flyTo({
+                            center: turf.center(bBoxFeature_Collection).geometry.coordinates
+                        });
+                        map.fitBounds(turf.bbox(bBoxFeature_Collection), {padding: 200})
                     })
             }
         });
@@ -456,6 +473,11 @@ map.on('load', function () {
                     .done(function (convexHull) {
                         bBoxFeature_Collection.features = convexHull
                         loadSourceLayer()
+                        // center the view on the newly-added feature collection
+                        map.flyTo({
+                            center: turf.center(bBoxFeature_Collection).geometry.coordinates
+                        });
+                        map.fitBounds(turf.bbox(bBoxFeature_Collection), {padding: 200})
                     })
             }
         });
@@ -470,6 +492,11 @@ map.on('load', function () {
             clearSourceLayer()
             $('#topLeftBB').val('')
             $('#bottomRightBB').val('')
+            // adjusts the map view to be centered on lng=0,lat=0
+            map.flyTo({
+                center: [0, 0],
+                zoom: 3
+            });
         });
 
         // Bounding Box Creator Tool
@@ -480,6 +507,8 @@ map.on('load', function () {
             document.getElementById('pointBB').innerHTML =
                 JSON.stringify(e.lngLat, function (key, val) { return val.toFixed ? Number(val.toFixed(4)) : val; }).replace('{"lng":', '').replace('"lat":', ' ').replace('}', '')
         });
+    });
+});
 
 //Nearest Neighbor Query
 //Nearest Neighbor Query
@@ -498,7 +527,9 @@ map.on('load', function () {
                                                                                                     |  $$$$$$/                                        
                                                                                                      \______/                                         
 */
+map.on('load', function () {
 
+    $(document).ready(function () {
 
         var nearestNeighborsFC = {
             "type": "FeatureCollection",
@@ -613,9 +644,13 @@ map.on('load', function () {
                 .done(function (nnFeatures) {
                     nearestNeighborsFC.features = nnFeatures
                     loadSourceLayer()
+                    // center the view on the newly-added feature collection
                     map.flyTo({
-                        center: [enterLng, enterLat]
+                        center: turf.center(nearestNeighborsFC).geometry.coordinates
                     });
+                    if (turf.area(turf.bboxPolygon(turf.bbox(nearestNeighborsFC))) > 1000000) {
+                        map.fitBounds(turf.bbox(nearestNeighborsFC), {padding: 200})
+                    }
                 });
         });
 
@@ -627,9 +662,12 @@ map.on('load', function () {
             clearSourceLayer()
             // adjusts the map view to be centered on lng=0,lat=0
             map.flyTo({
-                center: [0, 0]
+                center: [0, 0],
+                zoom: 3
             });
         });
+    });
+});
 
 
 //Distance between cities
@@ -648,7 +686,9 @@ map.on('load', function () {
                         |  $$$$$$/                                                                                
                          \______/                                                                                 
 */
+map.on('load', function () {
 
+    $(document).ready(function () {
         var cityDistFC = {
             "type": "FeatureCollection",
             "features": []
@@ -728,6 +768,13 @@ map.on('load', function () {
             $.get("http://localhost:8888/cityDist/?cityArgs=" + [citynameSource, citynameDest], function (cityDistJSON) {
                 cityDistFC.features = cityDistJSON
                 loadSourceLayer()
+                // center the view on the newly-added feature collection
+                map.flyTo({
+                    center: turf.center(cityDistFC).geometry.coordinates
+                });
+                if (turf.area(turf.bboxPolygon(turf.bbox(cityDistFC))) > 1000000) {
+                    map.fitBounds(turf.bbox(cityDistFC), {padding: 200})
+                }
                 // calculate the distance between the two cities in miles
                 length = turf.distance(cityDistJSON[0].geometry.coordinates, cityDistJSON[1].geometry.coordinates, 'miles');
                 // restrict  to 2 decimal points
@@ -746,6 +793,10 @@ map.on('load', function () {
         $('#clearCities').click(function () {
             $('#calculated-distance p').remove();
             clearSourceLayer()
+            map.flyTo({
+                center: [-98,40],
+                zoom: 3
+            })
         });
 
         /***********************************************************************************/
@@ -830,6 +881,8 @@ map.on('load', function () {
                 emptySelectOptions("#citySelectSource")
             })
             .trigger("change");
+        });
+    });
 
 
 //Upload GeoJSON
@@ -849,7 +902,9 @@ map.on('load', function () {
           | $$                                                                                                                    
           |__/                                                                                                                    
 */
+map.on('load', function () {
 
+    $(document).ready(function () {
         // Purpose:     Creates a map source and layer if they don't already exist
         //              Otherwise, it modifies the existing source
         // Input:       None
@@ -931,12 +986,16 @@ map.on('load', function () {
         // Output:      None
         $('#submitGJ').click(function () {
             // grabs the number input from the lngInput-latInput fields
-            var submitted_geojson = JSON.parse(document.getElementById('geoJSONTextBox').value)
+            let submitted_geojson = JSON.parse(document.getElementById('geoJSONTextBox').value)
             clearSourceLayer()
             loadSourceLayer(submitted_geojson)
-            // map.flyTo({
-            //     center: [0, 0]
-            // });
+            // center the view on the newly-added feature collection
+            map.flyTo({
+                center: turf.center(submitted_geojson).geometry.coordinates
+            });
+            if (turf.area(turf.bboxPolygon(turf.bbox(submitted_geojson))) > 1000000) {
+                map.fitBounds(turf.bbox(submitted_geojson), {padding: 200})
+            }
         });
 
         // Purpose:     Events triggered when the `clearGJ` button is pressed
@@ -947,7 +1006,8 @@ map.on('load', function () {
             clearSourceLayer()
             // adjusts the map view to be centered on lng=0,lat=0
             map.flyTo({
-                center: [0, 0]
+                center: [0, 0],
+                zoom: 3
             });
         });
     });

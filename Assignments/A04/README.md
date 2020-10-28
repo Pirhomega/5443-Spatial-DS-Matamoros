@@ -51,7 +51,7 @@ This project utilizes and builds on [Portmap](https://github.com/portofportlandg
 
 ### Available Tools
 
-![](README_images/AvailModals.png)
+![Newly added modals and their titles](README_images/AvailModals.png)
 
 #### Location Tools
 
