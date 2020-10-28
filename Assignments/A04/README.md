@@ -13,10 +13,16 @@ This project utilizes and builds on [Portmap](https://github.com/portofportlandg
 |   1    | [main_flask_app.py](assets/api/main_flask_app.py) | App backend that runs locally and processes requests (clicks and URLs) from the frontend |
 |   2    | [index.html](index.html) | Interactive HTML map of the world. My code goes from line 445 - 762 |
 |   3    | [map.js](assets/js/map.js) | The javascript/JQuery code that works with `index.html`. My code goes from line 129 - 733|
+|   4    | [testScripts](assets/api/testScripts/) | A set of project functionality prototypes. I wrote these to test features before adding them |
+|   5    | [data](assets/api/data/) | The datasets the used when querying Bounding Box intersections and Nearest Neighbors, Location Tools, and Distance between Cities |
+|   6    | [depracated_data_fixers](assets/api/data/depracated_data_fixers) | Scripts I used to format the datasets to work with the project |
+|   7    | [data.zip](assets/api/data/data.zip) | Compressed copy of all datasets. Unzip into the [data](assets/api/data/) folder before running the project |
+|   8    | [A04.yml](A04.yml) | An export of the conda environment with which this project was developed |
+|   9    | [README_images](README_images) | Image(s) used in the README.md file |
 
 ## Instructions
 
-1. Download the repo and (optional, but __VERY__ recommended) create a conda environment with [Miniconda](https://docs.conda.io/en/latest/miniconda.html) or [Anaconda](https://conda.io/projects/conda/en/latest/user-guide/install/index.html). Create a new environment in the anaconda console using this method:
+1. Download the repo and (optional, but __VERY__ recommended) create a conda environment with [Miniconda](https://docs.conda.io/en/latest/miniconda.html) or [Anaconda](https://conda.io/projects/conda/en/latest/user-guide/install/index.html). Create a new environment in the anaconda console using either [A04.yml](A04.yml) with [this method](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#creating-an-environment-from-an-environment-yml-file) or following these instructions:
 
 ```txt
 (base) ~/> conda create -n <environment name>
@@ -25,7 +31,7 @@ This project utilizes and builds on [Portmap](https://github.com/portofportlandg
 (base) ~/> conda config --env --set channel_priority strict
 ```
 
-2. The packages necessary to run this software are [Python](https://www.python.org/), [flask](https://flask.palletsprojects.com/en/1.1.x/), [flask-cors](https://flask-cors.readthedocs.io/en/latest/#installation), [geopandas 0.8.1](https://geopandas.org/install.html#creating-a-new-environment), [scipy](https://www.scipy.org/install.html#installation), and [numpy](https://numpy.org/install/)). I recommend using conda to install all of these. (If using the channel 'conda-forge' in a conda environment as suggested in instruction 1, numpy will be installed when you install geopandas.) Here's how I installed them:
+2. The packages necessary to run this software are [Python](https://www.python.org/), [flask](https://flask.palletsprojects.com/en/1.1.x/), [flask-cors](https://flask-cors.readthedocs.io/en/latest/#installation), [geopandas 0.8.1](https://geopandas.org/install.html#creating-a-new-environment), [scipy](https://www.scipy.org/install.html#installation), and [numpy](https://numpy.org/install/). I recommend using conda to install all of these. (If using the channel 'conda-forge' in a conda environment as suggested in instruction 1, numpy will be installed when you install geopandas.) Here's how I installed them:
 
 ```txt
 (base) ~/> conda create -n <environment name>
@@ -41,11 +47,13 @@ This project utilizes and builds on [Portmap](https://github.com/portofportlandg
 
 3. Paste your Mapbox token on line 1 of [map.js](assets/js/map.js).
 
-4. Run the flask app by executing it in the conda environment. Execute from the root of the repo. The command would look something like this: `~/miniconda3/env/<environment name>/python.exe ./Assignments/A04/assets/api/geotest.py False`
+4. Unzip [data.zip](assets/api/data/data.zip) into [data](assets/api/data/)
 
-5. Launch the `index.html` on a server, such as [Live Server](https://marketplace.visualstudio.com/items?itemName=ritwickdey.LiveServer)
+5. Run the flask app by executing it in the conda environment. Execute from the root of the repo. The command would look something like this: `~/miniconda3/env/<environment name>/python.exe ./Assignments/A04/assets/api/geotest.py False`
 
-6. Hopefully everything is running. Click the buttons on the left side to access the functionality. If, however, you get an error like [this one](https://github.com/numpy/numpy/issues/14770), try following the [suggestion here](https://github.com/numpy/numpy/issues/14770#issuecomment-602181479) and see if that fixes it. That's the only problem I've run into.
+6. Launch the `index.html` on a server, such as [Live Server](https://marketplace.visualstudio.com/items?itemName=ritwickdey.LiveServer)
+
+7. Hopefully everything is running. Click the buttons on the left side to access the functionality. If, however, you get an error like [this one](https://github.com/numpy/numpy/issues/14770), try following the [suggestion here](https://github.com/numpy/numpy/issues/14770#issuecomment-602181479) and see if that fixes it. That's the only problem I've run into.
 
 ## Functionality
 

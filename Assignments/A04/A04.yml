@@ -1,0 +1,12 @@
+name: A04
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3
+  - flask
+  - flask-cors
+  - geopandas
+  - scipy
+  - numpy
+prefix: C:\Users\Owner\miniconda3\envs\A04
