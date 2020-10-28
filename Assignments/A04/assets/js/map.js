@@ -295,8 +295,6 @@ map.on('load', function () {
                     }
                 })
         })
-    });
-});
 
 // Bounding Box Query
 // Bounding Box Query
@@ -315,9 +313,6 @@ map.on('load', function () {
                                                                                       |  $$$$$$/
                                                                                        \______/ 
 */
-map.on('load', function () {
-
-    $(document).ready(function () {
 
         var bBoxFeature_Collection = {
             "type": "FeatureCollection",
@@ -476,17 +471,15 @@ map.on('load', function () {
             $('#topLeftBB').val('')
             $('#bottomRightBB').val('')
         });
-    });
-});
 
-// Bounding Box Creator Tool
-// Bounding Box Creator Tool
-// Bounding Box Creator Tool
-// Purpose:     Populates the `pointBB` element with the world coordinate location of a user's click
-map.on(touchEvent, function (e) {
-    document.getElementById('pointBB').innerHTML =
-        JSON.stringify(e.lngLat, function (key, val) { return val.toFixed ? Number(val.toFixed(4)) : val; }).replace('{"lng":', '').replace('"lat":', ' ').replace('}', '')
-});
+        // Bounding Box Creator Tool
+        // Bounding Box Creator Tool
+        // Bounding Box Creator Tool
+        // Purpose:     Populates the `pointBB` element with the world coordinate location of a user's click
+        map.on(touchEvent, function (e) {
+            document.getElementById('pointBB').innerHTML =
+                JSON.stringify(e.lngLat, function (key, val) { return val.toFixed ? Number(val.toFixed(4)) : val; }).replace('{"lng":', '').replace('"lat":', ' ').replace('}', '')
+        });
 
 //Nearest Neighbor Query
 //Nearest Neighbor Query
@@ -506,9 +499,6 @@ map.on(touchEvent, function (e) {
                                                                                                      \______/                                         
 */
 
-map.on('load', function () {
-
-    $(document).ready(function () {
 
         var nearestNeighborsFC = {
             "type": "FeatureCollection",
@@ -640,8 +630,6 @@ map.on('load', function () {
                 center: [0, 0]
             });
         });
-    });
-});
 
 
 //Distance between cities
@@ -660,9 +648,6 @@ map.on('load', function () {
                         |  $$$$$$/                                                                                
                          \______/                                                                                 
 */
-map.on('load', function () {
-
-    $(document).ready(function () {
 
         var cityDistFC = {
             "type": "FeatureCollection",
@@ -846,10 +831,6 @@ map.on('load', function () {
             })
             .trigger("change");
 
-        /***********************************************************************************/
-
-    });
-});
 
 //Upload GeoJSON
 //Upload GeoJSON
@@ -868,9 +849,6 @@ map.on('load', function () {
           | $$                                                                                                                    
           |__/                                                                                                                    
 */
-map.on('load', function () {
-
-    $(document).ready(function () {
 
         // Purpose:     Creates a map source and layer if they don't already exist
         //              Otherwise, it modifies the existing source
@@ -956,9 +934,9 @@ map.on('load', function () {
             var submitted_geojson = JSON.parse(document.getElementById('geoJSONTextBox').value)
             clearSourceLayer()
             loadSourceLayer(submitted_geojson)
-            map.flyTo({
-                center: [0, 0]
-            });
+            // map.flyTo({
+            //     center: [0, 0]
+            // });
         });
 
         // Purpose:     Events triggered when the `clearGJ` button is pressed

@@ -1,15 +1,15 @@
 from os import path
 from sys import argv
-from json import loads
+from json import load, loads, dump
+from urllib.parse import unquote
+
 from flask import Flask
 from flask import request
 from flask import jsonify
 from flask_cors import CORS
-from geopandas import GeoDataFrame
-import json
-import numpy as np
+from numpy import array
 from scipy.spatial import cKDTree
-from urllib.parse import unquote
+from geopandas import GeoDataFrame
 
 app = Flask(__name__)
 CORS(app)
@@ -75,7 +75,7 @@ def saveJSON():
                     (The backend needs to return something, apparently)
     """
     with open('./Assignments/A04/assets/api/data/savedJSON.geojson', 'w') as out:
-        json.dump(saveCoords_featurecollection, out, indent="  ")
+        dump(saveCoords_featurecollection, out, indent="  ")
     return "1"
 
 @app.route('/loadJSON/')
@@ -93,7 +93,7 @@ def loadJSON():
     with open('./Assignments/A04/assets/api/data/savedJSON.geojson', 'r') as infile:
         global saveCoords_featurecollection
         # store the .geojson contents into `saveCoords_featurecollection`
-        jsonFeatureCollection = json.load(infile)
+        jsonFeatureCollection = load(infile)
         saveCoords_featurecollection["features"] += jsonFeatureCollection["features"]
 
         return jsonify(saveCoords_featurecollection['features'])
@@ -198,7 +198,7 @@ def load_data_into_KDtree(path_to_dataset):
     datasetDF = GeoDataFrame.from_features(dataset, crs="EPSG:4326")
     # since cKDTree needs an array-like object to query nearest neighbors, we create
     #   such an array
-    datasetNP = np.array(list(datasetDF.geometry.apply(lambda x: (x.x, x.y))))
+    datasetNP = array(list(datasetDF.geometry.apply(lambda x: (x.x, x.y))))
     # populate the KD tree
     datasetKD = cKDTree(datasetNP)
     return (datasetKD, datasetDF, datasetNP)
@@ -226,7 +226,7 @@ def nnQuery():
 
     # Input
     #   queryDict = {"datasets":{}, "geojson":{}, "queryType":{}}
-    queryDict = json.loads(request.args.get("NNparams"))
+    queryDict = loads(request.args.get("NNparams"))
 
     # load all datasets to be queried for querying
     process_datasets(queryDict["datasets"])
@@ -243,7 +243,7 @@ def nnQuery():
                 # `dataset_map[dataset]['dataframe'].iloc[indices]` produces a dataframe ONLY OF the nearest neighbors 
                 #   (each nearest neighbor has the properties data from the dataset input file). 
                 #   The dataframe is then converted to a JSON string, which is then parsed into a python dict
-                full_results += json.loads((dataset_map[dataset]['dataframe'].iloc[indices]).to_json())['features']
+                full_results += loads((dataset_map[dataset]['dataframe'].iloc[indices]).to_json())['features']
     # if the query is to return all neighbors within a radius
     else:
         for dataset in dataset_map:
@@ -251,7 +251,7 @@ def nnQuery():
                 # the only difference between this block and the one up there is the `query_ball_point` call, which takes
                 #   the center of the query circle `[lng, lat]` and the radius, `r`
                 indices = dataset_map[dataset]['kdtree'].query_ball_point([lng, lat], r=int(queryDict["queryType"]["value"]))
-                full_results += json.loads((dataset_map[dataset]['dataframe'].iloc[indices]).to_json())['features']
+                full_results += loads((dataset_map[dataset]['dataframe'].iloc[indices]).to_json())['features']
     return jsonify(full_results)
 
 """
@@ -289,7 +289,7 @@ def load_cities():
     global distance_map
     # creates a dict mapping cities to a key equal to the first character in their name
     city_letter_map = {}
-    data = json.loads(open(distance_map["cities"]["path"], 'r').read())
+    data = loads(open(distance_map["cities"]["path"], 'r').read())
     for document in data["features"]:
         first_letter_of_name = document["properties"]["name"][0]
         # if the first character of that city has not been added to the map
@@ -443,7 +443,7 @@ def queryBBoxIntersection(BBparams):
             points_in_bbox, _ = bbox_df.sindex.query_bulk(dataset_map[dataset]["dataframe"].geometry, predicate='intersects')
             # create a dataframe of all the intersecting points in dataset dataframe
             matches = dataset_map[dataset]["dataframe"].iloc[points_in_bbox]
-            full_results += json.loads(matches.to_json())['features']
+            full_results += loads(matches.to_json())['features']
     return full_results, bbox['features']
 
 @app.route('/boundingBoxQuery/')
@@ -458,7 +458,7 @@ def boundingBoxQuery():
     Output:     `features + bbox_feature`: a list of all feature documents of points
                 contained by the bbox, and the bbox feature document
     """
-    BBparams = json.loads(request.args.get("BBparams", None))
+    BBparams = loads(request.args.get("BBparams", None))
     features, bbox_feature = queryBBoxIntersection(BBparams)
     return jsonify(features + bbox_feature)
 
@@ -501,7 +501,7 @@ def convexQuery():
         'features': []
     }
 
-    BBparams = json.loads(request.args.get("BBparams", None))
+    BBparams = loads(request.args.get("BBparams", None))
     # store a feature list of points contained by the bounding box
     intersections, _ = queryBBoxIntersection(BBparams)
     # append to `convexFC` the polygon formed by all the points within the bbox
@@ -514,7 +514,7 @@ def convexQuery():
     #   object is less than three. For two points, the convex hull collapses to a 
     #   LineString; for 1, a Point. 
     #       - https://geopandas.readthedocs.io/en/latest/docs/reference/api/geopandas.GeoSeries.convex_hull.html
-    convex_full_results = json.loads((convexParams.convex_hull).to_json())
+    convex_full_results = loads((convexParams.convex_hull).to_json())
     # return a list of the convex hull and the intersecting points found within the bounding box
     return jsonify(convex_full_results['features']+intersections)
 
