@@ -211,7 +211,7 @@
                     <li>
                         <!-- Coordinates/Address Button -->
                         <a class="clickable" data-toggle="modal" data-target="#geolocationModal"
-                            title="Search Address & Coords."><i class="fas fa-fw fa-map-marker-alt"></i></a>
+                            title="Location Tools"><i class="fas fa-fw fa-map-marker-alt"></i></a>
                     </li>
 
                     <li>
@@ -556,6 +556,20 @@
                         <hr>
                         <br />
 
+                        <!-- lng/lat on map click -->
+                        <p style="font-size: 12px"><i class="fas fa-mouse-pointer"></i> Click on map to find lng/lat:
+                        </p>
+                        <pre id='pointBB'><i class="fa fa-fw fa-globe"></i> lng/lat</pre>
+                        
+                        <div style="padding-top:10px">
+                            <input type="button" value="submit top left" id="fillTopLeft" style="font-size: 10px;">
+                            <input type="button" value="submit bottom right" id="fillBottomRight" style="font-size: 10px;">
+                        </div>
+
+                        <br />
+                        <hr>
+                        <br />
+
                         <!-- enter lng/lat -->
                         <div style="vertical-align:top;">
                             <p style="font-size: 12px"><i class="fas fa-map-marked-alt"></i> Bounding Box (lon, lat)</p>
@@ -570,20 +584,6 @@
                                 <!-- <input type="button" value="visualize" id="queryBBButtonViz" style="font-size: 10px;"> -->
                                 <input type="button" value="clear" id="queryBBButtonClear" style="font-size: 10px;">
                             </div>
-                        </div>
-
-                        <br />
-                        <hr>
-                        <br />
-
-                        <!-- lng/lat on map click -->
-                        <p style="font-size: 12px"><i class="fas fa-mouse-pointer"></i> Click on map to find lng/lat:
-                        </p>
-                        <pre id='pointBB'><i class="fa fa-fw fa-globe"></i> lng/lat</pre>
-                        
-                        <div style="padding-top:10px">
-                            <input type="button" value="submit top left" id="fillTopLeft" style="font-size: 10px;">
-                            <input type="button" value="submit bottom right" id="fillBottomRight" style="font-size: 10px;">
                         </div>
 
                         <br />
