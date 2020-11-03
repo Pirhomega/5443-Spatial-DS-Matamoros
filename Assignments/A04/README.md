@@ -14,7 +14,7 @@ This project utilizes and builds on [Portmap](https://github.com/portofportlandg
 |   2    | [index.html](index.html) | Interactive HTML map of the world. |
 |   3    | [map.js](assets/js/map.js) | The javascript/JQuery code that works with `index.html`. |
 |   4    | [testScripts](assets/api/testScripts/) | A set of project functionality prototypes. I wrote these to test features before adding them |
-|   5    | [data](assets/api/data/) | The datasets the used when querying Bounding Box intersections and Nearest Neighbors, Location Tools, and Distance between Cities |
+|   5    | [data](assets/api/data/) | The datasets used when querying Bounding Box intersections and Nearest Neighbors, Location Tools, and Distance between Cities |
 |   6    | [depracated_data_fixers](assets/api/data/depracated_data_fixers) | Scripts I used to format the datasets to work with the project |
 |   7    | [data.zip](assets/api/data/data.zip) | Compressed copy of all datasets. Unzip into the [data](assets/api/data/) folder before running the project |
 |   8    | [A04.yml](A04.yml) | An export of the conda environment with which this project was developed |

@@ -149,55 +149,35 @@ map.on('load', function () {
 |________/ \______/  \_______/ \_______/   \___/  |__/ \______/ |__/  |__/         |__/ \______/  \______/ |__/|_______/ 
 */
 
-   map.on('load', function () {
+map.on('load', function () {
 
     $(document).ready(function () {
-
         var displayCoordsFC = {
-            "type": "FeatureCollection",
-            "features": []
-        }
+            'type': 'FeatureCollection',
+            'features': [{}]
+        };
+        map.addSource('displayCoords', {
+            'type': 'geojson',
+            'data': displayCoordsFC
+        });
+        map.addLayer({
+            'id': 'displayCoordsLayer',
+            'type': 'circle',
+            'source': 'displayCoords',
+            'layout': {},
+            'paint': {
+                'circle-color': 'red',
+                'circle-radius': 8,
+            }
+        });
 
-        // Purpose:     Creates a map source and layer if they don't already exist
-        //              Otherwise, it modifies the existing source
+        // Purpose:     Modifies source to display data stored in `displayCoordsFC`
         // Input:       None
         // Output:      None
         function loadSourceLayer() {
-            if (!map.getSource("displayCoords")) {
-                map.addSource("displayCoords", {
-                    'type': 'geojson',
-                    'data': displayCoordsFC
-                });
-            } else {
-                map.getSource("displayCoords").setData(
-                    displayCoordsFC
-                )
-            }
-
-            if (!map.getLayer("displayCoordsLayer")) {
-                map.addLayer({
-                    'id': "displayCoordsLayer",
-                    'type': 'circle',
-                    'source': "displayCoords",
-                    'layout': {},
-                    'paint': {
-                        "circle-color": 'red',
-                        "circle-radius": 8,
-                    }
-                })
-            }
-        };
-
-        // Purpose:     Removes a map source and layer
-        // Input:       None
-        // Output:      None
-        function clearSourceLayer() {
-            if (map.getLayer("displayCoordsLayer")) {
-                map.removeLayer("displayCoordsLayer");
-            }
-            if (map.getSource("displayCoords")) {
-                map.removeSource("displayCoords")
-            }
+            map.getSource('displayCoords').setData(
+                displayCoordsFC
+            )
         };
 
         // Purpose:     Events triggered when the `findLLButton` is pressed
@@ -227,7 +207,7 @@ map.on('load', function () {
                         center: turf.center(displayCoordsFC).geometry.coordinates
                     });
                     if (turf.area(turf.bboxPolygon(turf.bbox(displayCoordsFC))) > 1000000) {
-                        map.fitBounds(turf.bbox(displayCoordsFC), {padding: 100})
+                        map.fitBounds(turf.bbox(displayCoordsFC), { padding: 100 })
                     }
                 });
         });
@@ -239,15 +219,15 @@ map.on('load', function () {
         $('#findLLButtonClear').click(function () {
             // remove all features from the `displayCoordsFC` feature collection
             displayCoordsFC.features = []
-            // remove the source and layers associated with `displayCoordsFC`
-            clearSourceLayer()
+            //  Calling `loadSourceLayer` with an empty `displayCoordFC` removes all
+            //  Location Tools displays but preserves the layer and source
+            loadSourceLayer()
 
             // clear the lat and lng input fields
             $('#lngInput').val('')
             $('#latInput').val('')
             // adjusts the map view to be centered on lng=0,lat=0
             map.flyTo({
-                center: [0, 0],
                 zoom: 3
             });
         });
@@ -283,7 +263,7 @@ map.on('load', function () {
                         center: turf.center(displayCoordsFC).geometry.coordinates
                     });
                     if (turf.area(turf.bboxPolygon(turf.bbox(displayCoordsFC))) > 1000000) {
-                        map.fitBounds(turf.bbox(displayCoordsFC), {padding: 100})
+                        map.fitBounds(turf.bbox(displayCoordsFC), { padding: 100 })
                     }
                 })
         })
@@ -326,67 +306,46 @@ map.on('load', function () {
     $(document).ready(function () {
 
         var bBoxFeature_Collection = {
-            "type": "FeatureCollection",
-            "features": []
-        }
+            'type': 'FeatureCollection',
+            'features': [{}]
+        };
+        map.addSource('coordsBB', {
+            'type': 'geojson',
+            'data': bBoxFeature_Collection
+        });
+        map.addLayer({
+            'id': 'bBoxContained',
+            'type': 'circle',
+            'source': 'coordsBB',
+            'layout': {},
+            'paint': {
+                'circle-color': 'green',
+                'circle-radius': 8,
+            },
+            'filter': ['==', '$type', 'Point']
+        });
+        map.addLayer({
+            'id': 'bBoxOutline',
+            'type': 'fill',
+            'source': 'coordsBB',
+            'layout': {},
+            'paint': {
+                'fill-color': 'white',
+                'fill-opacity': 0.4,
+                'fill-outline-color': 'gray'
+            },
+            'filter': ['==', '$type', 'Polygon']
+        });
+
 
         // Purpose:     Creates a map source and layer if they don't already exist
         //              Otherwise, it modifies the existing source
         // Input:       None
         // Output:      None
         function loadSourceLayer() {
-            if (!map.getSource("coordsBB")) {
-                map.addSource("coordsBB", {
-                    'type': 'geojson',
-                    'data': bBoxFeature_Collection
-                });
-            } else {
-                map.getSource("coordsBB").setData(
-                    bBoxFeature_Collection
-                )
-            }
-            if (!map.getLayer("bBoxContained")) {
-                map.addLayer({
-                    'id': "bBoxContained",
-                    'type': 'circle',
-                    'source': "coordsBB",
-                    'layout': {},
-                    'paint': {
-                        "circle-color": 'red',
-                        "circle-radius": 8,
-                    },
-                    'filter': ['==', '$type', 'Point']
-                })
-            }
-            if (!map.getLayer("bBoxOutline")) {
-                map.addLayer({
-                    'id': "bBoxOutline",
-                    'type': 'fill',
-                    'source': "coordsBB",
-                    'layout': {},
-                    'paint': {
-                        'fill-color': 'white',
-                        'fill-opacity': 0.4,
-                        'fill-outline-color': 'gray'
-                    },
-                    'filter': ['==', '$type', 'Polygon']
-                })
-            }
-        };
-
-        // Purpose:     Removes a map source and layer
-        // Input:       None
-        // Output:      None
-        function clearSourceLayer() {
-            if (map.getLayer("bBoxOutline")) {
-                map.removeLayer("bBoxOutline");
-            }
-            if (map.getLayer("bBoxContained")) {
-                map.removeLayer("bBoxContained");
-            }
-            if (map.getSource("coordsBB")) {
-                map.removeSource("coordsBB");
-            }
+            map.getSource("coordsBB").setData(
+                bBoxFeature_Collection
+            )
         };
 
         // Purpose:     Events triggered when the `fillTopLeft` is pressed.
@@ -414,8 +373,8 @@ map.on('load', function () {
         function chooseDataset() {
             return {
                 "datasets": {
-                    "earthquakes": document.getElementById("earthquakes").checked,
-                    "volcanos": document.getElementById("volcanos").checked
+                    "earthquakes": document.getElementById("BBearthquakes").checked,
+                    "volcanos": document.getElementById("BBvolcanos").checked
                     // "planes": document.getElementById("planes").checked,
                     // "ufos": document.getElementById("ufos").checked
                 }
@@ -447,7 +406,7 @@ map.on('load', function () {
                         map.flyTo({
                             center: turf.center(bBoxFeature_Collection).geometry.coordinates
                         });
-                        map.fitBounds(turf.bbox(bBoxFeature_Collection), {padding: 200})
+                        map.fitBounds(turf.bbox(bBoxFeature_Collection), { padding: 200 })
                     })
             }
         });
@@ -477,7 +436,7 @@ map.on('load', function () {
                         map.flyTo({
                             center: turf.center(bBoxFeature_Collection).geometry.coordinates
                         });
-                        map.fitBounds(turf.bbox(bBoxFeature_Collection), {padding: 200})
+                        map.fitBounds(turf.bbox(bBoxFeature_Collection), { padding: 200 })
                     })
             }
         });
@@ -489,13 +448,14 @@ map.on('load', function () {
         // Output:      None
         $('#queryBBButtonClear').click(function () {
             bBoxFeature_Collection.features = []
-            clearSourceLayer()
+            //  Calling `loadSourceLayer` with an empty `bBoxFeature_Collection` removes all
+            //  Bounding Box Query displays but preserves the layer and source
+            loadSourceLayer()
             $('#topLeftBB').val('')
             $('#bottomRightBB').val('')
             // adjusts the map view to be centered on lng=0,lat=0
             map.flyTo({
-                center: [0, 0],
-                zoom: 3
+                zoom: 2
             });
         });
 
@@ -532,51 +492,33 @@ map.on('load', function () {
     $(document).ready(function () {
 
         var nearestNeighborsFC = {
-            "type": "FeatureCollection",
-            "features": []
-        }
+            'type': 'FeatureCollection',
+            'features': [{}]
+        };
+        map.addSource('nnCoords', {
+            'type': 'geojson',
+            'data': nearestNeighborsFC
+        });
+        map.addLayer({
+            'id': 'nnCoordsLayer',
+            'type': 'circle',
+            'source': 'nnCoords',
+            'layout': {},
+            'paint': {
+                'circle-color': 'blue',
+                'circle-radius': 8,
+            }
+        });
 
         // Purpose:     Creates a map source and layer if they don't already exist
         //              Otherwise, it modifies the existing source
         // Input:       None
         // Output:      None
         function loadSourceLayer() {
-            if (!map.getSource("nnCoords")) {
-                map.addSource("nnCoords", {
-                    'type': 'geojson',
-                    'data': nearestNeighborsFC
-                });
-            } else {
-                map.getSource("nnCoords").setData(
-                    nearestNeighborsFC
-                )
-            }
-
-            if (!map.getLayer("nnCoordsLayer")) {
-                map.addLayer({
-                    'id': "nnCoordsLayer",
-                    'type': 'circle',
-                    'source': "nnCoords",
-                    'layout': {},
-                    'paint': {
-                        "circle-color": 'blue',
-                        "circle-radius": 8,
-                    }
-                })
-            }
+            map.getSource("nnCoords").setData(
+                nearestNeighborsFC
+            )
         };
-
-        // Purpose:     Removes a map source and layer
-        // Input:       None
-        // Output:      None
-        function clearSourceLayer() {
-            if (map.getLayer("nnCoordsLayer")) {
-                map.removeLayer("nnCoordsLayer");
-            }
-            if (map.getSource("nnCoords")) {
-                map.removeSource("nnCoords")
-            }
-        }
 
         // Purpose:     Creates a JSON document with the name of a dataset and
         //              a boolean indicated its checkbox was checked
@@ -584,9 +526,9 @@ map.on('load', function () {
         // Output:      JSON document
         function chooseDataset() {
             return {
-                "datasets": {
-                    "earthquakes": document.getElementById("earthquakes").checked,
-                    "volcanos": document.getElementById("volcanos").checked,
+                'datasets': {
+                    'earthquakes': document.getElementById("NNearthquakes").checked,
+                    'volcanos': document.getElementById("NNvolcanos").checked,
                     // "planes": document.getElementById("planes").checked,
                     // "ufos": document.getElementById("ufos").checked
                 }
@@ -602,18 +544,18 @@ map.on('load', function () {
             //      with that query type and the value of N
             if (document.getElementById("nearestN").checked)
                 return {
-                    "queryType": {
-                        "name": "nearestN",
-                        "value": document.getElementById('nearestNValue').value
+                    'queryType': {
+                        'name': 'nearestN',
+                        'value': document.getElementById('nearestNValue').value
                     }
                 }
             // If the user wants to query all neighbors within a circular radius R,
             //      return a document with that query type and the value of R
             else
                 return {
-                    "queryType": {
-                        "name": "radiusKm",
-                        "value": document.getElementById('radiusKm').value
+                    'queryType': {
+                        'name': 'radiusKm',
+                        'value': document.getElementById('radiusKm').value
                     }
                 }
         };
@@ -649,7 +591,7 @@ map.on('load', function () {
                         center: turf.center(nearestNeighborsFC).geometry.coordinates
                     });
                     if (turf.area(turf.bboxPolygon(turf.bbox(nearestNeighborsFC))) > 1000000) {
-                        map.fitBounds(turf.bbox(nearestNeighborsFC), {padding: 200})
+                        map.fitBounds(turf.bbox(nearestNeighborsFC), { padding: 200 })
                     }
                 });
         });
@@ -659,11 +601,13 @@ map.on('load', function () {
         // Input:       None
         // Output:      None
         $('#queryNNClear').click(function () {
-            clearSourceLayer()
+            nearestNeighborsFC.features = []
+            //  Calling `loadSourceLayer` with an empty `nearestNNClear` removes all
+            //  Nearest Neighbor Query displays but preserves the layer and source
+            loadSourceLayer()
             // adjusts the map view to be centered on lng=0,lat=0
             map.flyTo({
-                center: [0, 0],
-                zoom: 3
+                zoom: 2
             });
         });
     });
@@ -690,69 +634,48 @@ map.on('load', function () {
 
     $(document).ready(function () {
         var cityDistFC = {
-            "type": "FeatureCollection",
-            "features": []
+            'type': 'FeatureCollection',
+            'features': [{}]
         }
+        map.addSource("cityDistCoords", {
+            'type': 'geojson',
+            'data': cityDistFC
+        });
+        map.addLayer({
+            'id': 'cityDistLineLayer',
+            'type': 'line',
+            'source': 'cityDistCoords',
+            'layout': {
+                'line-join': 'round',
+                'line-cap': 'round'
+            },
+            'paint': {
+                'line-color': 'black',
+                'line-width': 3,
+            },
+            'filter': ['==', '$type', 'LineString']
+        });
+        map.addLayer({
+            'id': 'cityDistCoordsLayer',
+            'type': 'circle',
+            'source': 'cityDistCoords',
+            'layout': {},
+            'paint': {
+                'circle-color': 'green',
+                'circle-radius': 8,
+            },
+            'filter': ['==', '$type', 'Point']
+        });
 
         // Purpose:     Creates a map source and layer if they don't already exist
         //              Otherwise, it modifies the existing source
         // Input:       None
         // Output:      None
         function loadSourceLayer() {
-            if (!map.getSource("cityDistCoords")) {
-                map.addSource("cityDistCoords", {
-                    'type': 'geojson',
-                    'data': cityDistFC
-                });
-            } else {
-                map.getSource("cityDistCoords").setData(
-                    cityDistFC
-                )
-            }
-
-            if (!map.getLayer("cityDistCoordsLayer")) {
-                map.addLayer({
-                    'id': "cityDistLineLayer",
-                    'type': 'line',
-                    'source': "cityDistCoords",
-                    'layout': {
-                        'line-join': 'round',
-                        'line-cap': 'round'
-                    },
-                    'paint': {
-                        "line-color": 'black',
-                        "line-width": 3,
-                    },
-                    'filter': ['==', '$type', 'LineString']
-                })
-                map.addLayer({
-                    'id': "cityDistCoordsLayer",
-                    'type': 'circle',
-                    'source': "cityDistCoords",
-                    'layout': {},
-                    'paint': {
-                        "circle-color": 'green',
-                        "circle-radius": 8,
-                    },
-                    'filter': ['==', '$type', 'Point']
-                })
-            }
+            map.getSource("cityDistCoords").setData(
+                cityDistFC
+            )
         };
-
-        // Purpose:     Removes a map source and layer
-        // Input:       None
-        // Output:      None
-        function clearSourceLayer() {
-            if (map.getLayer("cityDistCoordsLayer")) {
-                map.removeLayer("cityDistCoordsLayer");
-            }
-            if (map.getLayer("cityDistLineLayer")) {
-                map.removeLayer("cityDistLineLayer");
-            }
-            if (map.getSource("cityDistCoords")) {
-                map.removeSource("cityDistCoords")
-            }
-        }
 
         // Purpose:     Events triggered when the `cityDist` is pressed.
         //              Queries the backend for the feature documents of two cities,
@@ -773,7 +696,7 @@ map.on('load', function () {
                     center: turf.center(cityDistFC).geometry.coordinates
                 });
                 if (turf.area(turf.bboxPolygon(turf.bbox(cityDistFC))) > 1000000) {
-                    map.fitBounds(turf.bbox(cityDistFC), {padding: 200})
+                    map.fitBounds(turf.bbox(cityDistFC), { padding: 200 })
                 }
                 // calculate the distance between the two cities in miles
                 length = turf.distance(cityDistJSON[0].geometry.coordinates, cityDistJSON[1].geometry.coordinates, 'miles');
@@ -792,10 +715,13 @@ map.on('load', function () {
         // Output:      None
         $('#clearCities').click(function () {
             $('#calculated-distance p').remove();
-            clearSourceLayer()
+            cityDistFC.features = []
+            //  Calling `loadSourceLayer` with an empty `cityDistFC` removes all
+            //  Distance between cities displays but preserves the layer and source
+            loadSourceLayer()
             map.flyTo({
-                center: [-98,40],
-                zoom: 3
+                center: [-98, 40],
+                zoom: 2
             })
         });
 
@@ -881,8 +807,8 @@ map.on('load', function () {
                 emptySelectOptions("#citySelectSource")
             })
             .trigger("change");
-        });
     });
+});
 
 
 //Upload GeoJSON
@@ -903,82 +829,61 @@ map.on('load', function () {
           |__/                                                                                                                    
 */
 map.on('load', function () {
-
     $(document).ready(function () {
+        map.addSource('geoJSONCoords', {
+            'type': 'geojson',
+            'data': {
+                'type': 'FeatureCollection',
+                'features': [{}]
+            }
+        });
+        map.addLayer({
+            'id': 'geoJSONPolyLayer',
+            'type': 'fill',
+            'source': 'geoJSONCoords',
+            'layout': {},
+            'paint': {
+                'fill-color': 'white',
+                'fill-opacity': 0.4,
+                'fill-outline-color': 'gray'
+            },
+            'filter': ['==', '$type', 'Polygon']
+        });
+        map.addLayer({
+            'id': 'geoJSONLineLayer',
+            'type': 'line',
+            'source': 'geoJSONCoords',
+            'layout': {
+                'line-join': 'round',
+                'line-cap': 'round'
+            },
+            'paint': {
+                'line-color': 'black',
+                'line-width': 3,
+            },
+            'filter': ['==', '$type', 'LineString']
+        });
+        map.addLayer({
+            'id': 'geoJSONPointLayer',
+            'type': 'circle',
+            'source': 'geoJSONCoords',
+            'layout': {},
+            'paint': {
+                'circle-color': 'yellow',
+                'circle-radius': 8,
+            },
+            'filter': ['==', '$type', 'Point']
+        });
+
         // Purpose:     Creates a map source and layer if they don't already exist
         //              Otherwise, it modifies the existing source
         // Input:       None
         // Output:      None
-        function loadSourceLayer(geoJSONFC) {
-            if (!map.getSource("geoJSONCoords")) {
-                map.addSource("geoJSONCoords", {
-                    'type': 'geojson',
-                    'data': geoJSONFC
-                });
-            } else {
-                map.getSource("geoJSONCoords").setData(
-                    geoJSONFC
-                )
-            }
-
-            if (!map.getLayer("geoJSONCoordsLayer")) {
-                map.addLayer({
-                    'id': "geoJSONPolyLayer",
-                    'type': 'fill',
-                    'source': "geoJSONCoords",
-                    'layout': {},
-                    'paint': {
-                        'fill-color': 'white',
-                        'fill-opacity': 0.4,
-                        'fill-outline-color': 'gray'
-                    },
-                    'filter': ['==', '$type', 'Polygon']
-                })
-                map.addLayer({
-                    'id': "geoJSONLineLayer",
-                    'type': 'line',
-                    'source': "geoJSONCoords",
-                    'layout': {
-                        'line-join': 'round',
-                        'line-cap': 'round'
-                    },
-                    'paint': {
-                        "line-color": 'black',
-                        "line-width": 3,
-                    },
-                    'filter': ['==', '$type', 'LineString']
-                })
-                map.addLayer({
-                    'id': "geoJSONPointLayer",
-                    'type': 'circle',
-                    'source': "geoJSONCoords",
-                    'layout': {},
-                    'paint': {
-                        "circle-color": 'yellow',
-                        "circle-radius": 8,
-                    },
-                    'filter': ['==', '$type', 'Point']
-                })
-            }
+        function loadSourceLayer(geoJSON) {
+            map.getSource("geoJSONCoords").setData(
+                geoJSON
+            )
         };
-
-        // Purpose:     Removes a map source and layer
-        // Input:       None
-        // Output:      None
-        function clearSourceLayer() {
-            if (map.getLayer("geoJSONPolyLayer")) {
-                map.removeLayer("geoJSONPolyLayer");
-            }
-            if (map.getLayer("geoJSONLineLayer")) {
-                map.removeLayer("geoJSONLineLayer");
-            }
-            if (map.getLayer("geoJSONPointLayer")) {
-                map.removeLayer("geoJSONPointLayer");
-            }
-            if (map.getSource("geoJSONCoords")) {
-                map.removeSource("geoJSONCoords")
-            }
-        }
 
         // Purpose:     Events triggered when the `submitGJ` button is pressed
         //              Displays the geojson data pasted into `geoJSONTextBox`
@@ -987,14 +892,13 @@ map.on('load', function () {
         $('#submitGJ').click(function () {
             // grabs the number input from the lngInput-latInput fields
             let submitted_geojson = JSON.parse(document.getElementById('geoJSONTextBox').value)
-            clearSourceLayer()
             loadSourceLayer(submitted_geojson)
             // center the view on the newly-added feature collection
             map.flyTo({
                 center: turf.center(submitted_geojson).geometry.coordinates
             });
             if (turf.area(turf.bboxPolygon(turf.bbox(submitted_geojson))) > 1000000) {
-                map.fitBounds(turf.bbox(submitted_geojson), {padding: 200})
+                map.fitBounds(turf.bbox(submitted_geojson), { padding: 200 })
             }
         });
 
@@ -1003,11 +907,15 @@ map.on('load', function () {
         // Input:       None
         // Output:      None
         $('#clearGJ').click(function () {
-            clearSourceLayer()
+            //  Calling `loadSourceLayer` with an empty geoJSON feature collection removes 
+            // all Upload GeoJSON displays but preserves the layer and source
+            loadSourceLayer({
+                'type': 'FeatureCollection',
+                'features': [{}]
+            })
             // adjusts the map view to be centered on lng=0,lat=0
             map.flyTo({
-                center: [0, 0],
-                zoom: 3
+                zoom: 2
             });
         });
     });
@@ -1520,13 +1428,105 @@ var directoryOptions =
             'name': 'Physical',
             'open': true
         },
+        {
+            'name': 'Corbin Layers',
+            'open': true
+        }
 
     ];
 
 // organize layers in the layer tree
 var layers =
-
     [
+        // Upload GeoJSON LAYER TREE CONFIG
+        // Upload GeoJSON LAYER TREE CONFIG
+        {
+            'name': 'Upload GeoJSON',
+            'id': "upload_group",
+            'hideLabel': ['geoJSONPointLayer', 'geoJSONLineLayer', 'geoJSONPolyLayer'],
+            'icon': 'assets/images/globe-solid.svg',
+            'layerGroup': [
+                {
+                    'name': 'Points',
+                    'id': 'geoJSONPointLayer',
+                    'source': 'geoJSONCoords',
+                },
+                {
+                    'name': 'Lines',
+                    'id': 'geoJSONLineLayer',
+                    'source': 'geoJSONCoords',
+                },
+                {
+                    'name': 'Polygons',
+                    'id': 'geoJSONPolyLayer',
+                    'source': 'geoJSONCoords',
+                }
+            ],
+            'directory': 'Corbin Layers'
+        },
+
+        // Distance between cities LAYER TREE CONFIG
+        // Distance between cities LAYER TREE CONFIG
+        {
+            'name': 'Distance between cities',
+            'id': 'cities_group',
+            'hideLabel': ['cityDistCoordsLayer', 'cityDistLineLayer'],
+            'icon': 'assets/images/city-solid.svg',
+            'layerGroup': [
+                {
+                    'name': 'cityDistCoordsLayer',
+                    'id': 'cityDistCoordsLayer',
+                    'source': 'cityDistCoords',
+                },
+                {
+                    'name': 'cityDistLineLayer',
+                    'id': 'cityDistLineLayer',
+                    'source':'cityDistCoords',
+                }
+            ],
+            'directory': 'Corbin Layers'
+        },
+
+        // Nearest Neighbor Query LAYER TREE CONFIG
+        // Nearest Neighbor Query LAYER TREE CONFIG
+        {
+            'name': 'Nearest Neighbor Query',
+            'id': 'nnCoordsLayer',
+            'source': 'nnCoords',
+            'directory': 'Corbin Layers'
+        },
+
+        // Bounding Box Query LAYER TREE CONFIG
+        // Bounding Box Query LAYER TREE CONFIG
+        {
+            'name': 'Bounding Box Query',
+            'id': 'bBox_group',
+            'hideLabel': ['bBoxOutline', 'bBoxContained'],
+            'icon': 'assets/images/box-solid.svg',
+            'layerGroup': [
+                {
+                    'id': 'bBoxOutline',
+                    'source': 'coordsBB',
+                    'name': 'bBoxOutline',
+                },
+                {
+                    'id': 'bBoxContained',
+                    'source': 'coordsBB',
+                    'name': 'bBoxContained',
+                }
+            ],
+            'directory': 'Corbin Layers'
+        },
+
+        // Location Tools LAYER TREE CONFIG
+        // Location Tools LAYER TREE CONFIG
+        {
+            'name': 'Location Tools',
+            'id': 'displayCoordsLayer',
+            'source': 'displayCoords',
+            'directory': 'Corbin Layers'
+        },
+
         // Mr Claw LAYER TREE CONFIG
         // Mr Claw LAYER TREE CONFIG
         {
@@ -1638,7 +1638,6 @@ var layers =
         },
 
     ];
-
 
 var layerList = new LayerTree({ layers: layers, directoryOptions: directoryOptions, onClickLoad: true });
 

@@ -399,7 +399,6 @@ LayerTree.prototype.updateLegend = function (map, sourceCollection, lyrs) {
                 if (group.hasOwnProperty('hideLabel') && Array.isArray(group.hideLabel) && group.hideLabel.length > 0) {
                     hideLabel = true;
                 }
-
                 var layerGroup = group.layerGroup;
 
                 for (var i = 0; i < layerGroup.length; i++) {
