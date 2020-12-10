@@ -1,0 +1,15 @@
+name: A05
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3
+  - networkx
+  - geopandas
+  - flask
+  - flask-cors
+  - scipy
+  - geopy
+  - pydot
+  - autopep8
+prefix: C:\Users\Owner\miniconda3\envs\A05

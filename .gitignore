@@ -351,10 +351,12 @@ MigrationBackup/
 
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
-Assignments/A04/assets/api/data/savedJSON.geojson
-Assignments/A04/assets/js/temp.js
-Assignments/A04/assets/api/data/volcanos.geojson
-Assignments/A04/assets/api/data/us_states.geojson
-Assignments/A04/assets/api/data/us_railroads.geojson
-Assignments/A04/assets/api/data/earthquakes.geojson
-Assignments/A04/assets/api/data/cities.geojson
+
+Assignments/A05/assets/api/data/cities
+Assignments/A05/assets/api/data/na_lakes
+Assignments/A05/assets/api/data/rails_and_roads
+Assignments/A05/assets/api/data/smaller_rails_and_roads
+Assignments/A05/assets/api/data/us_states
+Assignments/A05/assets/api/data/vols_eq_ufo
+Assignments/A05/assets/api/data/data
+*.pdf
