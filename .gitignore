@@ -352,6 +352,13 @@ MigrationBackup/
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
 
+
+Assignments/A04/assets/api/data/cities
+Assignments/A04/assets/api/data/earthquakes
+Assignments/A04/assets/api/data/us_railroads
+Assignments/A04/assets/api/data/us_states
+Assignments/A04/assets/api/data/volcanos
+
 Assignments/A05/assets/api/data/cities
 Assignments/A05/assets/api/data/na_lakes
 Assignments/A05/assets/api/data/rails_and_roads
